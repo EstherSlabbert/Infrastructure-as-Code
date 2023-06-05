@@ -40,9 +40,11 @@ Tools used for implementing Infrastructure as Code include:
 
 ![Ansible diagram](/images/ansible-diagram.png)
 
-Ansible is a popular **open-source configuration management and automation tool** that can be used for Infrastructure as Code (IaC) practices. It allows you to define and manage infrastructure resources, provision servers, configure software, and orchestrate complex deployments using declarative and idempotent playbooks written in **YAML**.
+Ansible is a popular **open-source configuration management and automation tool** that can be used for Infrastructure as Code (IaC) practices. It allows you to define and manage infrastructure resources, provision servers, configure software, and orchestrate complex deployments using declarative and idempotent playbooks **written in YAML**.
 
 Ansible's **simplicity**, **agentless** architecture, **power**, and strong community support make it a popular choice for implementing Infrastructure as Code. It provides a straightforward and efficient way to automate infrastructure management, making it easier to achieve consistency, scalability, and reproducibility across different environments.
+
+We use **configuration management** to **automate and manage the configuration of software systems and infrastructure**. It involves defining, deploying, and maintaining the desired state of configurations across multiple environments. Configuration management tools enable consistent, scalable, and efficient management of configurations, ensuring that systems are correctly set up, properly configured, and easily reproducible. It helps streamline the deployment process, maintain system integrity, enforce standards, track changes, and facilitate efficient collaboration among teams working on complex software projects or large-scale infrastructures.
 
 **Why we use Ansible:**
 
@@ -50,17 +52,15 @@ Ansible's **simplicity**, **agentless** architecture, **power**, and strong comm
 - Agentless = the agent nodes do not need Ansible installed. Ansible only needs to be on the controller node. It is no longer necessary to SSH into Agents, as the Ansible Controller is where you do everything.
 - Powerful = can manage and facilitate 2 - 200 000 servers running anywhere in the world on any cloud platform. The controller could be configured locally or globally, and can easily communicate with all the servers at the same time, do different tasks inside individual servers at the same time.
 
+Ansible can be run: hybrid, cloud, or local.
+
 Dependencies:
 
-Ansible was written with Python. It uses YAML to interact.
+Ansible was written with Python, thus requires that Python is installed. It uses YAML to interact.
 
-How to create/use passwords and SSH keys.
+Know how to create/use passwords and SSH keys.
 
 Requires Vagrant/alternative VM provider installed/available.
-
-Can be run on: hybrid, cloud, or local.
-
-We use configuration management to 
 
 [Ansible official page with documentation](https://www.ansible.com/)
 
@@ -172,17 +172,27 @@ cd /etc/ansible
 # installs tree = command-line utility that displays directory structures in a tree-like format
 sudo apt install tree -y
 ```
+Add agents to Ansible's hosts configuration file:
 ```shell
 # edit /etc/ansible/hosts to contain hosts/agents
 sudo nano /etc/ansible/hosts
 
-# create groups or put individual IPs inside hosts including:
+# create groups or put individual IPs inside hosts including the following:
 [web]
 192.168.33.10 ansible_connection=ssh ansible_ssh_user=vagrant ansible_ssh_pass=vagrant
 [db]
 192.168.33.11 ansible_connection=ssh ansible_ssh_user=vagrant ansible_ssh_pass=vagrant
 # save and exit
 ```
+Ping your hosts/agents:
+<!---
+If you get this error while pinging:
+192.168.33.11 | FAILED! => {
+    "msg": "Using a SSH password instead of a key is not possible because Host Key checking is enabled and sshpass does not support this.  Please add this host's fingerprint to your known_hosts file to manage this host."
+}
+Edit: /etc/ansible/ansible.cfg under '[defaults]' uncomment 'host_key_checking = False' and under '[ssh_connection]' paste 'host_key_checking = False' to bypass ssh host checking
+--->
+
 ```shell
 # looks for all agents in hosts file and sends ping requests if found and will respond with 'pong' if successful
 sudo ansible all -m ping

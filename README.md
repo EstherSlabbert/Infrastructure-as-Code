@@ -10,11 +10,13 @@
 
 Infrastructure as Code (IaC) is a software engineering approach and practice that involves **managing and provisioning computing infrastructure resources automatically** using machine-readable configuration files or scripts. Instead of manually setting up and configuring servers, networks, and other infrastructure components, IaC allows developers and system administrators to define and manage their infrastructure using code.
 
-<!--- With Infrastructure as Code, the entire infrastructure stack, including servers, networks, storage, and other resources, is described and managed through code, typically in a declarative or imperative programming language. The code defines the desired state of the infrastructure, specifying how it should be provisioned, configured, and deployed. --->
+Infrastructure code = code that we write for machines to understand.
+
+With Infrastructure as Code, the entire infrastructure stack, including servers, networks, storage, and other resources, is described and managed through code<!---, typically in a declarative or imperative programming language--->. The code defines the desired state of the infrastructure, specifying how it should be provisioned, configured, and deployed. 
 
 ### <a id="benefits">Benefits:</a>
 
-By treating infrastructure as code, organizations can achieve **greater efficiency**, **consistency**, **scalability**, and **automation** in managing their computing infrastructure, making it **easier to deploy and manage applications in a reliable and reproducible manner**.
+By treating infrastructure as code, organizations can achieve **greater efficiency**, **consistency**, **scalability**, and **automation**, meaning we eliminate manual processes, in managing their computing infrastructure, making it **easier to deploy and manage applications in a reliable and reproducible manner**.
 
 - Version control: Infrastructure code can be stored in version control systems, allowing teams to track changes, collaborate, and roll back to previous versions if needed.
 
@@ -28,13 +30,15 @@ By treating infrastructure as code, organizations can achieve **greater efficien
 
 ### <a id="tools-used">Tools used</a>
 
-Common tools used for implementing Infrastructure as Code include:
+Tools used for implementing Infrastructure as Code include:
 
-- Configuration management tools like Ansible, Chef, and Puppet
-- Orchestration tools like Terraform and CloudFormation
+- **Configuration management tools** like Ansible, Chef, and Puppet
+- **Orchestration tools** like Terraform and CloudFormation
 - Cloud-specific tools like Azure Resource Manager and Google Cloud Deployment Manager
 
 ## <a id="iac-with-ansible">IaC with Ansible</a>
+
+![Ansible diagram](/images/ansible-diagram.png)
 
 Ansible is a popular **open-source configuration management and automation tool** that can be used for Infrastructure as Code (IaC) practices. It allows you to define and manage infrastructure resources, provision servers, configure software, and orchestrate complex deployments using declarative and idempotent playbooks written in **YAML**.
 
@@ -42,19 +46,21 @@ Ansible's **simplicity**, **agentless** architecture, **power**, and strong comm
 
 **Why we use Ansible:**
 
-- Simple = few lines of code to set up.
-- Agentless = the agent nodes do not need Ansible installed. Ansible only needs to be on the controller node. It is no longer necessary to SSH into Agents, the Ansible Controller is where you do everything.
-- Powerful = can run over 200 servers.
+- Simple = few lines of code/commands to set up.
+- Agentless = the agent nodes do not need Ansible installed. Ansible only needs to be on the controller node. It is no longer necessary to SSH into Agents, as the Ansible Controller is where you do everything.
+- Powerful = can manage and facilitate 2 - 200 000 servers running anywhere in the world on any cloud platform. The controller could be configured locally or globally, and can easily communicate with all the servers at the same time, do different tasks inside individual servers at the same time.
 
 Dependencies:
 
-Written with Python. Use YAML to interact.
+Ansible was written with Python. It uses YAML to interact.
 
 How to create/use passwords and SSH keys.
 
-Requires Vagrant/alternative VM provider.
+Requires Vagrant/alternative VM provider installed/available.
 
-Can be hybrid, cloud, local.
+Can be run on: hybrid, cloud, or local.
+
+We use configuration management to 
 
 [Ansible official page with documentation](https://www.ansible.com/)
 
@@ -87,7 +93,9 @@ vagrant up
 # gives the status of the machines
 vagrant status
 ```
+SSH into each VM and ensure internet connection accessible by running update & upgrade:
 
+Controller VM:
 ```shell
 # SSH into controller VM
 vagrant ssh controller
@@ -98,7 +106,7 @@ sudo apt-get update -y && sudo apt-get upgrade -y
 # exits VM
 exit
 ```
-
+Web app VM:
 ```shell
 # SSH into web VM
 vagrant ssh web
@@ -109,6 +117,7 @@ sudo apt-get update -y && sudo apt-get upgrade -y
 # exits VM
 exit
 ```
+Database VM:
 ```shell
 # SSH into db VM
 vagrant ssh db
@@ -119,3 +128,97 @@ sudo apt-get update -y && sudo apt-get upgrade -y
 # exits VM
 exit
 ```
+
+Enter controller VM using `vagrant ssh controller` in your bash terminal in the folder you have your Vagrantfile:
+```shell
+## Set up connections to web and db VMs
+# ssh into web VM from controller VM
+ssh vagrant@192.168.33.10
+# confirm adding host for first time
+yes
+# enter password as vagrant (do not worry that nothing comes up when typing in the password, it is registering input)
+password:vagrant
+# check web access
+sudo apt update -y
+# logout to controller
+exit
+
+# ssh into db VM from controller VM
+ssh vagrant@192.168.33.11
+# confirm adding host for first time
+yes
+# enter password as vagrant (do not worry that nothing comes up when typing in the password, it is registering input)
+password:vagrant
+# check web access
+sudo apt update -y
+# logout to controller
+exit
+
+## Install Ansible
+# install useful command-line tools, which simplify the process of managing software repositories
+sudo apt install software-properties-common
+# downloads ansible packages from a repository
+sudo apt-add-repository ppa:ansible/ansible #enter
+# updates necessary packages for ansible
+sudo apt-get update -y
+# installs ansible
+sudo apt install ansible -y
+
+# checks installation of correct version
+sudo ansible --version # ansible 2.9.27
+
+# navigates to default ansible configuration files
+cd /etc/ansible
+# installs tree = command-line utility that displays directory structures in a tree-like format
+sudo apt install tree -y
+```
+```shell
+# edit /etc/ansible/hosts to contain hosts/agents
+sudo nano /etc/ansible/hosts
+
+# create groups or put individual IPs inside hosts including:
+[web]
+192.168.33.10 ansible_connection=ssh ansible_ssh_user=vagrant ansible_ssh_pass=vagrant
+[db]
+192.168.33.11 ansible_connection=ssh ansible_ssh_user=vagrant ansible_ssh_pass=vagrant
+# save and exit
+```
+```shell
+# looks for all agents in hosts file and sends ping requests if found and will respond with 'pong' if successful
+sudo ansible all -m ping
+# Returns following if no hosts: [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+
+# sends ping request to web VM
+sudo ansible web -m ping
+yes
+# returns:
+# 192.168.33.10 | SUCCESS => {
+#    "ansible_facts": {
+#        "discovered_interpreter_python": "/usr/bin/python"
+#    },
+#    "changed": false,
+#    "ping": "pong"
+#}
+
+# sends ping request to db VM
+sudo ansible db -m ping
+yes
+# returns:
+# 192.168.33.11 | SUCCESS => {
+#    "ansible_facts": {
+#        "discovered_interpreter_python": "/usr/bin/python"
+#    },
+#    "changed": false,
+#    "ping": "pong"
+#}
+```
+<!--- Default ansible file structure:
+/etc/ansible/hosts stores hosts/agents addresses
+/etc/ansible/ansible.conf contains ansibles configurations
+
+sudo ansible all -m ping --ask-vault-pass
+password: 
+
+## <a id="iac-with-terraform">IaC with Terraform</a>
+
+Terraform is an Orchestration tool. --->

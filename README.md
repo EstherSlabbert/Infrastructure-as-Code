@@ -5,6 +5,9 @@
     - [Tools used](#tools-used)
   - [IaC with Ansible](#iac-with-ansible)
   - [Configuration Management with Ansible](#configuration-management-with-ansible)
+    - [Ansible Set up and SSH connections](#ansible-set-up-and-ssh-connections)
+    - [Adhoc Commands with Ansible](#adhoc-commands-with-ansible)
+    - [Ansible Playbook - YAML](#ansible-playbook---yaml)
 
 ## <a id="what-is-iac">What is IaC?</a>
 
@@ -81,6 +84,8 @@ Requires Vagrant/alternative VM provider installed/available.
 - Integration with cloud platforms: Ansible integrates well with various cloud platforms, such as AWS, Azure, Google Cloud, and OpenStack, allowing you to provision and manage cloud resources using Ansible playbooks. It provides modules and plugins specifically designed for interacting with cloud APIs, enabling infrastructure provisioning and configuration management in cloud environments. --->
 
 ## <a id="configuration-management-with-ansible">Configuration Management with Ansible</a>
+
+### <a id="ansible-set-up-and-ssh-connections">Ansible Set up and SSH connections</a>
 
 With Vagrantfile in the 'Infrastructure-as-Code' folder:
 ```shell
@@ -222,13 +227,189 @@ yes
 #    "ping": "pong"
 #}
 ```
-<!--- Default ansible file structure:
+### <a id="adhoc-commands-with-ansible">Adhoc Commands with Ansible</a>
+
+Adhoc commands typically follow this format: `ansible <target_hosts> -m <module_name> -a "<module_arguments>"`.
+It allows you to perform quick tasks or execute simple modules on remote hosts managed by Ansible. Useful for performing quick tasks, gathering information, making changes, or running modules on remote hosts without the need to create a full-fledged playbook.
+Get info from the agents while in controller using an adhoc command (one only run once):
+```bash
+# uses ansible to get OS of web host
+sudo ansible web -a "uname -a"
+# uses ansible to get OS of db host
+sudo ansible db -a "uname -a"
+# uses ansible to get date and time where web host is
+sudo ansible web -a "date"
+# uses ansible to get date and time where db host is
+sudo ansible db -a "date"
+# free and used memory of web host
+sudo ansible web -a "free -m"
+# free and used memory of db host
+sudo ansible db -a "free -m"
+# see all files in web host
+sudo ansible web -a "ls -a"
+# see all files in db host
+sudo ansible db -a "ls -a"
+```
+[Ansible - Adhoc commands](https://docs.ansible.com/ansible/latest/command_guide/intro_adhoc.html)
+```bash
+# create a file on controller
+sudo nano test.txt
+# write something, save and exit
+
+# move file from controller VM using Adhoc commands to the web host
+sudo ansible web -m copy -a "src=/etc/ansible/test.txt dest=/home/vagrant/test"
+
+```
+
+### <a id="ansible-playbook-yaml">Ansible Playbook - YAML</a>
+
+Playbooks are re-usable. (just need to change the hosts and add keys)
+```bash
+# create a playbook to install nginx in web-server(s)
+sudo nano config_nginx_web.yml #.yaml also works
+```
+In 'config_nginx_web.yml' write the following: (indent = 2 spaces)
+```yaml
+# add --- to start YAML file
+---
+# add name of the host
+- hosts: web
+# gather additional facts about the steps (optional)
+  gather_facts: yes
+# add admin access to this file
+  become: true
+# add instructions (i.e. TASKS) (to install nginx):
+# install nginx
+  tasks:
+  - name: Installing Nginx #Your choice of name
+    apt: pkg=nginx state=present # starts and ensures present,state=absent stops/removes
+# enable nginx
+
+```
+Run playbook:
+```bash
+#run playbook file with tasks written in yaml
+sudo ansible-playbook config_nginx_web.yml
+
+#check status
+sudo ansible web -a "sudo systemctl status nginx"
+```
+Playbook for copying over the app folder
+Create playbook file:
+```bash
+# create playbook to copy app over to web VM
+sudo nano copy_app_over.yml
+```
+Add tasks to playbook file:
+```yaml
+# start yaml file
+---
+# state hosts name
+- hosts: web
+# gather additional facts about the steps (optional)
+  gather_facts: yes
+# give admin access to this file
+  become: true
+# task: get app folder on web agent
+  tasks:
+  - name: Copy App folder
+    copy:
+      src: /home/vagrant/app
+      dest: /home/vagrant/
+```
+Run playbook:
+```bash
+#run playbook file with tasks written in yaml
+sudo ansible-playbook copy_app_over.yml
+
+#check status
+sudo ansible web -a "ls -a"
+```
+
+playbook to install required version of NodeJS:
+Create playbook file:
+```bash
+# create playbook to install nodejs
+sudo nano config_install_nodejs.yml
+```
+Add tasks to playbook file:
+```yaml
+---
+- hosts: web
+  gather_facts: yes
+  become: true
+
+  tasks:
+    - name: Add Node.js repository
+    # uses the shell module to run the curl command and execute the Node.js setup script to add the repository to the system.
+      shell: curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+
+    - name: Install Node.js
+    # uses the apt module to install the nodejs package 
+      apt:
+        name: nodejs
+        # state parameter is set to present to ensure Node.js is installed
+        state: present
+        # update_cache: yes ensures that the package manager cache is updated before installing
+        update_cache: yes
+```
+Run playbook:
+```bash
+# runs playbooks
+sudo ansible-playbook config_install_nodejs.yml
+# checks version of nodejs installed
+sudo ansible web -a "node --version"
+```
+Create playbook:
+```bash
+sudo nano start_app.yml
+```
+Write playbook:
+```yaml
+---
+- hosts: web
+  gather_facts: yes
+  become: true
+
+  tasks:  
+    - name: Install Node.js
+      become_user: vagrant
+      shell: curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+
+    - name: Install nodejs package
+      become_user: vagrant
+      shell: sudo apt-get install -y nodejs
+
+    - name: Install app dependencies
+      become_user: vagrant
+      shell: npm install
+      args:
+        chdir: /home/vagrant/app
+
+    - name: Install PM2 globally
+      shell: sudo npm install pm2 -g
+
+    - name: Start the app with PM2
+      shell: pm2 start app.js
+      become_user: vagrant
+      args:
+        chdir: /home/vagrant/app
+```
+run playbook:
+```bash
+# runs playbooks
+sudo ansible-playbook start_app.yml
+# checks 
+sudo ansible web -a ""
+```
+
+<!-- Default ansible file structure:
 /etc/ansible/hosts stores hosts/agents addresses
 /etc/ansible/ansible.conf contains ansibles configurations
 
 sudo ansible all -m ping --ask-vault-pass
-password: 
+password: -->
 
-## <a id="iac-with-terraform">IaC with Terraform</a>
+<!-- ## <a id="iac-with-terraform">IaC with Terraform</a>
 
-Terraform is an Orchestration tool. --->
+Terraform is an Orchestration tool. -->

@@ -274,7 +274,7 @@ Useful module_arguments:
 
 [Ansible - Adhoc commands](https://docs.ansible.com/ansible/latest/command_guide/intro_adhoc.html)
 
-### <a id="ansible-playbooks-yaml">Ansible Playbooks - YAML</a>
+### <a id="ansible-playbooks---yaml">Ansible Playbooks - YAML</a>
 
 Ansible playbooks are configuration files that define a set of tasks to be executed on remote systems.
 They are re-usable (i.e. idempotent) - just need to change the hosts and add keys.
@@ -347,6 +347,8 @@ Nginx Reverse Proxy playbook:
 
 #### <a id="ansible-copy-app-playbook">Ansible Copy 'app' Playbook</a>
 
+If app is not on the controller VM already use this command to copy it over: `scp -r app/ vagrant@192.168.33.12:/home/vagrant/`.
+
 Playbook for copying over the app folder:
 
 1. Create playbook file:
@@ -373,10 +375,10 @@ sudo nano copy_app_over.yml
 ```
 3. Run playbook:
 ```bash
-#run playbook file with tasks written in yaml
+# runs playbook file with tasks written in yaml
 sudo ansible-playbook copy_app_over.yml
 
-#check status
+# check status
 sudo ansible web -a "ls -a"
 ```
 
@@ -427,7 +429,7 @@ sudo nano config_install_nodejs.yml
 ```
 3. Run playbook:
 ```bash
-# runs playbooks
+# runs playbook
 sudo ansible-playbook config_install_nodejs.yml
 # checks version of nodejs installed
 sudo ansible web -a "node --version"
@@ -450,7 +452,7 @@ sudo nano start_app.yml
 
   tasks:  
     - name: Install app dependencies
-      shell: sudo npm install
+      shell: npm install
       args:
         chdir: /home/vagrant/app
 
@@ -461,11 +463,10 @@ sudo nano start_app.yml
 ```
 3. Run playbook:
 ```bash
-# runs playbooks
+# runs playbook
 sudo ansible-playbook start_app.yml
 ```
 Go to the web VM's IP in your web browser to see if app is running.
-
 
 <!-- Jaafar's Playbook to install nodejs, pm2, app, and start the app:
 ```yaml

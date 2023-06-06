@@ -7,7 +7,11 @@
   - [Configuration Management with Ansible](#configuration-management-with-ansible)
     - [Ansible Set up and SSH connections](#ansible-set-up-and-ssh-connections)
     - [Adhoc Commands with Ansible](#adhoc-commands-with-ansible)
-    - [Ansible Playbook - YAML](#ansible-playbook---yaml)
+    - [Ansible Playbooks - YAML](#ansible-playbooks---yaml)
+      - [Ansible Nginx Playbooks](#ansible-nginx-playbooks)
+      - [Ansible Copy 'app' Playbook](#ansible-copy-app-playbook)
+      - [Ansible NodeJS Playbook](#ansible-nodejs-playbook)
+      - [Ansible Start App Playbook](#ansible-start-app-playbook)
 
 ## <a id="what-is-iac">What is IaC?</a>
 
@@ -192,9 +196,11 @@ sudo nano /etc/ansible/hosts
 Ping your hosts/agents:
 <!---
 If you get this error while pinging:
+```bash
 192.168.33.11 | FAILED! => {
     "msg": "Using a SSH password instead of a key is not possible because Host Key checking is enabled and sshpass does not support this.  Please add this host's fingerprint to your known_hosts file to manage this host."
 }
+```
 Edit: /etc/ansible/ansible.cfg under '[defaults]' uncomment 'host_key_checking = False' and under '[ssh_connection]' paste 'host_key_checking = False' to bypass ssh host checking
 --->
 
@@ -227,30 +233,29 @@ yes
 #    "ping": "pong"
 #}
 ```
+<!-- Default ansible file structure:
+/etc/ansible/hosts stores hosts/agents addresses
+/etc/ansible/ansible.conf contains ansibles configurations
+
+sudo ansible all -m ping --ask-vault-pass
+password: -->
 ### <a id="adhoc-commands-with-ansible">Adhoc Commands with Ansible</a>
 
 Adhoc commands typically follow this format: `ansible <target_hosts> -m <module_name> -a "<module_arguments>"`.
-It allows you to perform quick tasks or execute simple modules on remote hosts managed by Ansible. Useful for performing quick tasks, gathering information, making changes, or running modules on remote hosts without the need to create a full-fledged playbook.
-Get info from the agents while in controller using an adhoc command (one only run once):
+
+Using adhoc commands allows you to perform quick tasks or execute simple modules on remote hosts managed by Ansible (from the controller).
+
+Adhoc commands are useful for performing quick tasks, gathering information, making changes, or running modules on remote hosts without the need to create a full-fledged playbook. They are typically only run once.
+
+Example of adhoc command from the controller VM:
 ```bash
 # uses ansible to get OS of web host
 sudo ansible web -a "uname -a"
+# returns: Linux
 # uses ansible to get OS of db host
 sudo ansible db -a "uname -a"
-# uses ansible to get date and time where web host is
-sudo ansible web -a "date"
-# uses ansible to get date and time where db host is
-sudo ansible db -a "date"
-# free and used memory of web host
-sudo ansible web -a "free -m"
-# free and used memory of db host
-sudo ansible db -a "free -m"
-# see all files in web host
-sudo ansible web -a "ls -a"
-# see all files in db host
-sudo ansible db -a "ls -a"
 ```
-[Ansible - Adhoc commands](https://docs.ansible.com/ansible/latest/command_guide/intro_adhoc.html)
+Use adhoc command to move files/folders to a target_host(s)
 ```bash
 # create a file on controller
 sudo nano test.txt
@@ -258,17 +263,39 @@ sudo nano test.txt
 
 # move file from controller VM using Adhoc commands to the web host
 sudo ansible web -m copy -a "src=/etc/ansible/test.txt dest=/home/vagrant/test"
-
 ```
+Useful module_arguments:
 
-### <a id="ansible-playbook-yaml">Ansible Playbook - YAML</a>
+`-a "uname -a"` gets the Operating System of the target_host(s)
 
-Playbooks are re-usable. (just need to change the hosts and add keys)
+`-a "date"` gets the date and time that the target_host(s) is/are running on
+
+`-a "ls -a"` lists all the files/folders in the target_host(s) home directory
+
+[Ansible - Adhoc commands](https://docs.ansible.com/ansible/latest/command_guide/intro_adhoc.html)
+
+### <a id="ansible-playbooks-yaml">Ansible Playbooks - YAML</a>
+
+Ansible playbooks are configuration files that define a set of tasks to be executed on remote systems.
+They are re-usable (i.e. idempotent) - just need to change the hosts and add keys.
+They are written in YAML.
+
+YAML (YAML Ain't Markup Language) is a human-readable data serialization format. It is often used in configuration files, data exchange, and markup languages.
+- indent in YAML = 2 spaces
+- YAML uses a hierarchy of key-value pairs to represent data
+- `#` used to comment
+- emphasizes human readability and simplicity
+
+#### <a id="ansible-nginx-playbooks">Ansible Nginx Playbooks</a>
+
+Nginx install & enable playbook:
+
+1. Create playbook file to install and enable Nginx:
 ```bash
 # create a playbook to install nginx in web-server(s)
 sudo nano config_nginx_web.yml #.yaml also works
 ```
-In 'config_nginx_web.yml' write the following: (indent = 2 spaces)
+2. In 'config_nginx_web.yml' playbook write the following:
 ```yaml
 # add --- to start YAML file
 ---
@@ -281,26 +308,53 @@ In 'config_nginx_web.yml' write the following: (indent = 2 spaces)
 # add instructions (i.e. TASKS) (to install nginx):
 # install nginx
   tasks:
-  - name: Installing Nginx #Your choice of name
-    apt: pkg=nginx state=present # starts and ensures present,state=absent stops/removes
-# enable nginx
-
+  - name: Installing Nginx # Your choice of name
+    apt: pkg=nginx state=present # present=enables nginx, state=absent stops/removes
 ```
-Run playbook:
+3. Run playbook:
 ```bash
 #run playbook file with tasks written in yaml
 sudo ansible-playbook config_nginx_web.yml
 
-#check status
+# check status of nginx to confirm correct set up
 sudo ansible web -a "sudo systemctl status nginx"
 ```
-Playbook for copying over the app folder
-Create playbook file:
+
+Nginx Reverse Proxy playbook:
+
+```yaml
+# add --- to start YAML file
+---
+# add name of the host
+- hosts: web
+# gather additional facts about the steps (optional)
+  gather_facts: yes
+# add admin access to this file
+  become: true
+# instructions to set up reverse proxy for sparta app port 3000
+  tasks: 
+    - name: Set up Nginx reverse proxy
+      replace:
+        path: /etc/nginx/sites-available/default
+        regexp: 'try_files \$uri \$uri/ =404;'
+        replace: 'proxy_pass http://localhost:3000/;'
+
+    - name: Reload Nginx to apply changes
+      systemd:
+        name: nginx
+        state: reloaded
+```
+
+#### <a id="ansible-copy-app-playbook">Ansible Copy 'app' Playbook</a>
+
+Playbook for copying over the app folder:
+
+1. Create playbook file:
 ```bash
 # create playbook to copy app over to web VM
 sudo nano copy_app_over.yml
 ```
-Add tasks to playbook file:
+2. Add tasks to playbook file:
 ```yaml
 # start yaml file
 ---
@@ -317,7 +371,7 @@ Add tasks to playbook file:
       src: /home/vagrant/app
       dest: /home/vagrant/
 ```
-Run playbook:
+3. Run playbook:
 ```bash
 #run playbook file with tasks written in yaml
 sudo ansible-playbook copy_app_over.yml
@@ -326,13 +380,16 @@ sudo ansible-playbook copy_app_over.yml
 sudo ansible web -a "ls -a"
 ```
 
-playbook to install required version of NodeJS:
-Create playbook file:
+#### <a id="ansible-nodejs-playbook">Ansible NodeJS Playbook</a>
+
+Playbook to install required version of NodeJS:
+
+1. Create playbook file:
 ```bash
 # create playbook to install nodejs
 sudo nano config_install_nodejs.yml
 ```
-Add tasks to playbook file:
+2. Add tasks to playbook file:
 ```yaml
 ---
 - hosts: web
@@ -340,31 +397,51 @@ Add tasks to playbook file:
   become: true
 
   tasks:
-    - name: Add Node.js repository
-    # uses the shell module to run the curl command and execute the Node.js setup script to add the repository to the system.
+    - name: Update system
+      apt:
+        update_cache: yes
+
+    - name: Install curl
+      apt:
+        name: curl
+        state: present
+
+    - name: Add Node.js 12.x repository
+    # uses the shell module to run the curl command and execute the Node.js setup script to add the repository $
       shell: curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+      args:
+        warn: false # ignore the warnings and proceed
 
     - name: Install Node.js
-    # uses the apt module to install the nodejs package 
+    # uses the apt module to install the nodejs package
       apt:
         name: nodejs
         # state parameter is set to present to ensure Node.js is installed
         state: present
         # update_cache: yes ensures that the package manager cache is updated before installing
         update_cache: yes
+
+    - name: Install pm2 globally
+      become: true
+      command: npm install pm2 -g
 ```
-Run playbook:
+3. Run playbook:
 ```bash
 # runs playbooks
 sudo ansible-playbook config_install_nodejs.yml
 # checks version of nodejs installed
 sudo ansible web -a "node --version"
+# checks pm2 installed
+sudo ansible web -a "pm2 --version"
 ```
-Create playbook:
+
+#### <a id="ansible-atart-app-playbook">Ansible Start App Playbook</a>
+
+1. Create playbook:
 ```bash
 sudo nano start_app.yml
 ```
-Write playbook:
+2. Write tasks/instructions in playbook:
 ```yaml
 ---
 - hosts: web
@@ -372,44 +449,70 @@ Write playbook:
   become: true
 
   tasks:  
-    - name: Install Node.js
-      become_user: vagrant
-      shell: curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
-
-    - name: Install nodejs package
-      become_user: vagrant
-      shell: sudo apt-get install -y nodejs
-
     - name: Install app dependencies
-      become_user: vagrant
-      shell: npm install
+      shell: sudo npm install
       args:
         chdir: /home/vagrant/app
-
-    - name: Install PM2 globally
-      shell: sudo npm install pm2 -g
 
     - name: Start the app with PM2
       shell: pm2 start app.js
-      become_user: vagrant
       args:
         chdir: /home/vagrant/app
 ```
-run playbook:
+3. Run playbook:
 ```bash
 # runs playbooks
 sudo ansible-playbook start_app.yml
-# checks 
-sudo ansible web -a ""
 ```
+Go to the web VM's IP in your web browser to see if app is running.
 
-<!-- Default ansible file structure:
-/etc/ansible/hosts stores hosts/agents addresses
-/etc/ansible/ansible.conf contains ansibles configurations
 
-sudo ansible all -m ping --ask-vault-pass
-password: -->
+<!-- Jaafar's Playbook to install nodejs, pm2, app, and start the app:
+```yaml
+---
+- name: Setup Node.js environment and start app on web VM
+  hosts: web
+  become: yes
 
+  tasks:
+    - name: Gathering Facts
+      setup:
+
+    - name: Update the system
+      apt:
+        update_cache: yes
+
+    - name: Install curl
+      apt:
+        name: curl
+        state: present
+
+    - name: Add Node.js 14.x repository
+      shell: curl -sL https://deb.nodesource.com/setup_14.x | bash -
+      args:
+        warn: false
+
+    - name: Install Node.js
+      apt:
+        name: nodejs
+        state: present
+
+    - name: Install pm2 globally
+      command: npm install pm2 -g
+      environment:
+        PATH: /usr/bin
+
+    - name: Install npm dependencies
+      command: npm install
+      args:
+        chdir: /home/vagrant/app
+
+    - name: Start the application using PM2
+      command: pm2 start app.js --update-env
+      args:
+        chdir: /home/vagrant/app
+```
+-->
 <!-- ## <a id="iac-with-terraform">IaC with Terraform</a>
 
 Terraform is an Orchestration tool. -->

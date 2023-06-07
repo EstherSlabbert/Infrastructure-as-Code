@@ -11,8 +11,8 @@
       - [Ansible Nginx Playbooks](#ansible-nginx-playbooks)
       - [Ansible Copy 'app' Playbook](#ansible-copy-app-playbook)
       - [Ansible NodeJS Playbook](#ansible-nodejs-playbook)
-      - [Ansible Start App Playbook](#ansible-start-app-playbook)
       - [Ansible Set Up MongoDB Playbook](#ansible-set-up-mongodb-playbook)
+      - [Ansible Start App Playbook](#ansible-start-app-playbook)
 
 ## <a id="what-is-iac">What is IaC?</a>
 
@@ -451,46 +451,6 @@ sudo ansible web -a "node --version"
 sudo ansible web -a "pm2 --version"
 ```
 
-#### <a id="ansible-start-app-playbook">Ansible Start App Playbook</a>
-
-1. Create playbook:
-```bash
-# creates yaml playbook file
-sudo nano start_app.yml
-```
-2. Write tasks/instructions in playbook:
-```yaml
-# --- starts YAML file
----
-# states hosts name
-- hosts: web
-# gather additional facts about the steps (optional)
-  gather_facts: yes
-# gives admin privileges to this file
-  become: true
-# Start app.js in the app folder:
-# install app dependencies in the app folder
-# use pm2 to start app.js in the app folder
-  tasks:  
-  - name: Install app dependencies
-    shell: npm install
-    args:
-      # changes to correct directory
-      chdir: /home/vagrant/app
-
-  - name: Start the app with PM2
-    shell: pm2 start app.js
-    args:
-      # changes to correct directory
-      chdir: /home/vagrant/app
-```
-3. Run playbook:
-```bash
-# runs playbook
-sudo ansible-playbook start_app.yml
-```
-Go to the web VM's IP (192.168.33.10) in your web browser to see if app is running.
-
 #### <a id="ansible-set-up-mongodb-playbook">Ansible Set Up MongoDB Playbook</a>
 
 Playbook to connect app to DB to see /posts page.
@@ -513,27 +473,92 @@ Playbook to connect app to DB to see /posts page.
   - name: Setting Up MongoDB
     apt: pkg=mongodb state=present
 # ensure db is running (status actively running)
+# replaces bind_ip to allow access for web to connect to database
+  - name: Change BindIP to allow web VM access
+    replace:
+      path: /etc/mongodb.conf
+      regexp: 'bind_ip = 127.0.0.1'
+      replace: 'bind_ip = 0.0.0.0'
+# uncomments port = 27017
+  - name: Ensure port 27017 is uncommented
+    replace:
+      path: /etc/mongodb.conf
+      regexp: '#port = 27017'
+      replace: 'port = 27017'
+# restarts mongodb with changes made to mongodb.conf
+  - name: Restart MongoDB service
+    systemd:
+      name: mongodb
+      state: restarted
+# enables mongodb
+  - name: Enable MongoDB service
+    systemd:
+      name: mongodb
+      enabled: yes
 ```
-3. Check: `sudo ansible db -a "sudo systemctl status mongodb"`
+3. Check: `sudo ansible db -a "sudo systemctl status mongodb"` and `sudo ansible db -a "cat /etc/mongodb.conf"`
 
-Automate:
+#### <a id="ansible-start-app-playbook">Ansible Start App Playbook</a>
 
-`ssh vagrant@192.168.33.11` db
+1. Create playbook:
+```bash
+# creates yaml playbook file
+sudo nano start_app.yml
+```
+2. Write tasks/instructions in playbook:
+```yaml
+# --- starts YAML file
+---
+# states hosts name
+- hosts: web
+# gather additional facts about the steps (optional)
+  gather_facts: yes
+# gives admin privileges to this file
+  become: true
+# Start app.js in the app folder:
+# add permanent environment variable 'DB_HOST=192.168.33.11:27017/posts' to .bashrc so that the app connects to db
+# install app dependencies in the app folder
+# use pm2 to start app.js in the app folder
+  tasks:
+  - name: Add environment variable to shell initialization file
+    lineinfile:
+      # sets destination to .bashrc file
+      dest: /home/vagrant/.bashrc
+      # specifies line to be added
+      line: 'export DB_HOST=192.168.33.11:27017/posts'
+      # ensures line is added at the end of the file
+      insertafter: EOF
+    
+  - name: Execute pm2 stop all command
+    # pm2 stop app if already running
+    command: pm2 stop all
 
-`sudo nano /etc/mongodb.conf` change `bind_ip = 127.0.0.1` to `bind_ip = 0.0.0.0`, ensure `#port = 27017` is uncommented as `port = 27017`.
+  - name: Install app dependencies
+    shell: npm install
+    args:
+      # changes to correct directory
+      chdir: /home/vagrant/app
 
-`sudo systemctl restart mongodb`
+  - name: Seed database
+    shell: node seed.js
+    args:
+      # changes to correct directory
+      chdir: /home/vagrant/app/seeds
+      # ignores warnings
+      warn: false
 
-`sudo systemctl enable mongodb`
-
-`sudo systemctl status mongodb`
-
-web VM:
-
-`ssh vagrant@192.168.33.10` web
-
-`export DB_HOST=192.168.33.11:27017/posts` then `cd app`, `pm2 start app.js --update-env` if it works make it persistent by adding it to the .bashrc file.
-
+  - name: Start the app with PM2
+    shell: pm2 start app.js --update-env
+    args:
+      # changes to correct directory
+      chdir: /home/vagrant/app
+```
+3. Run playbook:
+```bash
+# runs playbook
+sudo ansible-playbook start_app.yml
+```
+Go to the [web VM's IP](http://192.168.33.10/) in your web browser to see if app is running, then try the [/posts page](http://192.168.33.10/posts) and [/fibonnacci/10 page](http://192.168.33.10/fibonacci/10).
 
 <!-- ## <a id="iac-with-terraform">IaC with Terraform</a>
 

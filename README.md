@@ -280,6 +280,8 @@ Ansible playbooks are configuration files that define a set of tasks to be execu
 They are re-usable (i.e. idempotent) - just need to change the hosts and add keys.
 They are written in YAML.
 
+![Ansible Playbooks](/images/playbook.png)
+
 YAML (YAML Ain't Markup Language) is a human-readable data serialization format. It is often used in configuration files, data exchange, and markup languages.
 - indent in YAML = 2 spaces
 - YAML uses a hierarchy of key-value pairs to represent data

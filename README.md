@@ -12,6 +12,7 @@
       - [Ansible Copy 'app' Playbook](#ansible-copy-app-playbook)
       - [Ansible NodeJS Playbook](#ansible-nodejs-playbook)
       - [Ansible Start App Playbook](#ansible-start-app-playbook)
+      - [Ansible Set Up MongoDB Playbook](#ansible-set-up-mongodb-playbook)
 
 ## <a id="what-is-iac">What is IaC?</a>
 
@@ -335,16 +336,16 @@ Nginx Reverse Proxy playbook:
 # replace 'try_files' line with 'proxy_pass' line in this file '/etc/nginx/sites-available/default'
 # reload nginx to apply the changes made in the default file
   tasks: 
-    - name: Set up Nginx reverse proxy
-      replace:
-        path: /etc/nginx/sites-available/default
-        regexp: 'try_files \$uri \$uri/ =404;'
-        replace: 'proxy_pass http://localhost:3000/;'
+  - name: Set up Nginx reverse proxy
+    replace:
+      path: /etc/nginx/sites-available/default
+      regexp: 'try_files \$uri \$uri/ =404;'
+      replace: 'proxy_pass http://localhost:3000/;'
 
-    - name: Reload Nginx to apply changes
-      systemd:
-        name: nginx
-        state: reloaded
+  - name: Reload Nginx to apply changes
+    systemd:
+      name: nginx
+      state: reloaded
 ```
 
 #### <a id="ansible-copy-app-playbook">Ansible Copy 'app' Playbook</a>
@@ -411,34 +412,34 @@ sudo nano config_install_nodejs.yml
 # install nodejs
 # install pm2 globally
   tasks:
-    - name: Update system
-      apt:
-        update_cache: yes
+  - name: Update system
+    apt:
+      update_cache: yes
 
-    - name: Install curl
-      apt:
-        name: curl
-        state: present
+  - name: Install curl
+    apt:
+      name: curl
+      state: present
 
-    - name: Add Node.js 12.x repository
+  - name: Add Node.js 12.x repository
     # uses the shell module to run the curl command and execute the Node.js setup script to add the repository
-      shell: curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
-      args:
-        warn: false # ignore the warnings and proceed
+    shell: curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+    args:
+      warn: false # ignore the warnings and proceed
 
-    - name: Install Node.js
+  - name: Install Node.js
     # uses the apt module to install the nodejs package
-      apt:
-        name: nodejs
+    apt:
+      name: nodejs
         # state parameter is set to present to ensure Node.js is installed
-        state: present
+      state: present
         # update_cache: yes ensures that the package manager cache is updated before installing
-        update_cache: yes
+      update_cache: yes
 
-    - name: Install pm2 globally
+  - name: Install pm2 globally
       # ensures admin privileges
-      become: true
-      command: npm install pm2 -g
+    become: true
+    command: npm install pm2 -g
 ```
 3. Run playbook:
 ```bash
@@ -450,7 +451,7 @@ sudo ansible web -a "node --version"
 sudo ansible web -a "pm2 --version"
 ```
 
-#### <a id="ansible-atart-app-playbook">Ansible Start App Playbook</a>
+#### <a id="ansible-start-app-playbook">Ansible Start App Playbook</a>
 
 1. Create playbook:
 ```bash
@@ -471,17 +472,17 @@ sudo nano start_app.yml
 # install app dependencies in the app folder
 # use pm2 to start app.js in the app folder
   tasks:  
-    - name: Install app dependencies
-      shell: npm install
-      args:
+  - name: Install app dependencies
+    shell: npm install
+    args:
       # changes to correct directory
-        chdir: /home/vagrant/app
+      chdir: /home/vagrant/app
 
-    - name: Start the app with PM2
-      shell: pm2 start app.js
-      args:
+  - name: Start the app with PM2
+    shell: pm2 start app.js
+    args:
       # changes to correct directory
-        chdir: /home/vagrant/app
+      chdir: /home/vagrant/app
 ```
 3. Run playbook:
 ```bash
@@ -489,6 +490,50 @@ sudo nano start_app.yml
 sudo ansible-playbook start_app.yml
 ```
 Go to the web VM's IP (192.168.33.10) in your web browser to see if app is running.
+
+#### <a id="ansible-set-up-mongodb-playbook">Ansible Set Up MongoDB Playbook</a>
+
+Playbook to connect app to DB to see /posts page.
+1. Create the file with: `sudo nano setup_mongo.yml`.
+
+2. Write to the playbook:
+```yaml
+# Installing required version of mongodb in db-server
+# hosts entries are already done - ssh/password authentication in place
+---
+# hosts name
+- hosts: db
+# get facts/logs
+  gather_facts: yes
+# admin access
+  become: true
+# add instructions:
+# install mongodb
+  tasks:
+  - name: Setting Up MongoDB
+    apt: pkg=mongodb state=present
+# ensure db is running (status actively running)
+```
+3. Check: `sudo ansible db -a "sudo systemctl status mongodb"`
+
+Automate:
+
+`ssh vagrant@192.168.33.11` db
+
+`sudo nano /etc/mongodb.conf` change `bind_ip = 127.0.0.1` to `bind_ip = 0.0.0.0`, ensure `#port = 27017` is uncommented as `port = 27017`.
+
+`sudo systemctl restart mongodb`
+
+`sudo systemctl enable mongodb`
+
+`sudo systemctl status mongodb`
+
+web VM:
+
+`ssh vagrant@192.168.33.10` web
+
+`export DB_HOST=192.168.33.11:27017/posts` then `cd app`, `pm2 start app.js --update-env` if it works make it persistent by adding it to the .bashrc file.
+
 
 <!-- ## <a id="iac-with-terraform">IaC with Terraform</a>
 

@@ -334,6 +334,8 @@ Nginx Reverse Proxy playbook:
 # add admin access to this file
   become: true
 # instructions to set up reverse proxy for sparta app port 3000
+# replace 'try_files' line with 'proxy_pass' line in this file '/etc/nginx/sites-available/default'
+# reload nginx to apply the changes made in the default file
   tasks: 
     - name: Set up Nginx reverse proxy
       replace:
@@ -369,6 +371,7 @@ sudo nano copy_app_over.yml
 # give admin access to this file
   become: true
 # task: get app folder on web agent
+# copies app from controller path: '/home/vagrant/app' to destination path on web VM: '/home/vagrant/'
   tasks:
   - name: Copy App folder
     copy:
@@ -395,11 +398,20 @@ sudo nano config_install_nodejs.yml
 ```
 2. Add tasks to playbook file:
 ```yaml
+# --- starts YAML file
 ---
+# state hosts name
 - hosts: web
+# gather additional facts about the steps (optional)
   gather_facts: yes
+# give admin access to this file
   become: true
-
+# Install NodeJS 12.x and PM2:
+# update system
+# install curl
+# use curl to execute Node.js setup script to add the repo required
+# install nodejs
+# install pm2 globally
   tasks:
     - name: Update system
       apt:
@@ -411,7 +423,7 @@ sudo nano config_install_nodejs.yml
         state: present
 
     - name: Add Node.js 12.x repository
-    # uses the shell module to run the curl command and execute the Node.js setup script to add the repository $
+    # uses the shell module to run the curl command and execute the Node.js setup script to add the repository
       shell: curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
       args:
         warn: false # ignore the warnings and proceed
@@ -426,6 +438,7 @@ sudo nano config_install_nodejs.yml
         update_cache: yes
 
     - name: Install pm2 globally
+      # ensures admin privileges
       become: true
       command: npm install pm2 -g
 ```
@@ -443,24 +456,33 @@ sudo ansible web -a "pm2 --version"
 
 1. Create playbook:
 ```bash
+# creates yaml playbook file
 sudo nano start_app.yml
 ```
 2. Write tasks/instructions in playbook:
 ```yaml
+# --- starts YAML file
 ---
+# states hosts name
 - hosts: web
+# gather additional facts about the steps (optional)
   gather_facts: yes
+# gives admin privileges to this file
   become: true
-
+# Start app.js in the app folder:
+# install app dependencies in the app folder
+# use pm2 to start app.js in the app folder
   tasks:  
     - name: Install app dependencies
       shell: npm install
       args:
+      # changes to correct directory
         chdir: /home/vagrant/app
 
     - name: Start the app with PM2
       shell: pm2 start app.js
       args:
+      # changes to correct directory
         chdir: /home/vagrant/app
 ```
 3. Run playbook:
@@ -468,54 +490,8 @@ sudo nano start_app.yml
 # runs playbook
 sudo ansible-playbook start_app.yml
 ```
-Go to the web VM's IP in your web browser to see if app is running.
+Go to the web VM's IP (192.168.33.10) in your web browser to see if app is running.
 
-<!-- Jaafar's Playbook to install nodejs, pm2, app, and start the app:
-```yaml
----
-- name: Setup Node.js environment and start app on web VM
-  hosts: web
-  become: yes
-
-  tasks:
-    - name: Gathering Facts
-      setup:
-
-    - name: Update the system
-      apt:
-        update_cache: yes
-
-    - name: Install curl
-      apt:
-        name: curl
-        state: present
-
-    - name: Add Node.js 14.x repository
-      shell: curl -sL https://deb.nodesource.com/setup_14.x | bash -
-      args:
-        warn: false
-
-    - name: Install Node.js
-      apt:
-        name: nodejs
-        state: present
-
-    - name: Install pm2 globally
-      command: npm install pm2 -g
-      environment:
-        PATH: /usr/bin
-
-    - name: Install npm dependencies
-      command: npm install
-      args:
-        chdir: /home/vagrant/app
-
-    - name: Start the application using PM2
-      command: pm2 start app.js --update-env
-      args:
-        chdir: /home/vagrant/app
-```
--->
 <!-- ## <a id="iac-with-terraform">IaC with Terraform</a>
 
 Terraform is an Orchestration tool. -->

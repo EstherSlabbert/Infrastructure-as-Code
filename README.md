@@ -520,43 +520,61 @@ sudo nano start_app.yml
 # install app dependencies in the app folder
 # use pm2 to start app.js in the app folder
   tasks:
-  - name: Add environment variable to shell initialization file
+  - name: Add DB_HOST environment variable to .bashrc
     lineinfile:
       # sets destination to .bashrc file
-      dest: /home/vagrant/.bashrc
+      path: /home/vagrant/.bashrc
       # specifies line to be added
-      line: 'export DB_HOST=192.168.33.11:27017/posts'
+      line: 'export DB_HOST=mongodb://192.168.33.11:27017/posts'
       # ensures line is added at the end of the file
       insertafter: EOF
+      state: present
+    notify: Reload bashrc
+
+  - name: Reload bashrc
+    shell: source /home/vagrant/.bashrc
+    args:
+      executable: /bin/bash
+# It is set to run asynchronously with async: 0 and poll: 0 to ensure it runs immediately and does not affect subsequent tasks.
+    async: 0
+    poll: 0
+# The changed_when: false directive is added to avoid unnecessary changes reported by Ansible.
+    changed_when: false
     
-  - name: Execute pm2 stop all command
-    # pm2 stop app if already running
-    command: pm2 stop all
+  - name: Stop running app with PM2
+    shell: pm2 stop app
+    args:
+      chdir: /home/vagrant/app
+    register: pm2_stopped
+    changed_when: "'stopped' in pm2_stopped.stdout"
 
   - name: Install app dependencies
     shell: npm install
     args:
-      # changes to correct directory
       chdir: /home/vagrant/app
-
-  - name: Seed database
-    shell: node seed.js
-    args:
-      # changes to correct directory
-      chdir: /home/vagrant/app/seeds
-      # ignores warnings
-      warn: false
+    changed_when: false
 
   - name: Start the app with PM2
     shell: pm2 start app.js --update-env
     args:
+      chdir: /home/vagrant/app
+
+  - name: Seed database
+    shell: node seeds/seed.js
+    args:
       # changes to correct directory
       chdir: /home/vagrant/app
+      # ignores warnings
+      warn: false
 ```
 3. Run playbook:
 ```bash
 # runs playbook
 sudo ansible-playbook start_app.yml
+# checks changes to .bashrc
+sudo ansible web -a "cat ~/.bashrc"
+# checks status of app running on pm2
+sudo ansible web -a "pm2 status"
 ```
 Go to the [web VM's IP](http://192.168.33.10/) in your web browser to see if app is running, then try the [/posts page](http://192.168.33.10/posts) and [/fibonnacci/10 page](http://192.168.33.10/fibonacci/10).
 

@@ -17,7 +17,7 @@
 
 Infrastructure as Code (IaC) is a software engineering approach and practice that involves **managing and provisioning computing infrastructure resources automatically** using machine-readable configuration files or scripts. Instead of manually setting up and configuring servers, networks, and other infrastructure components, IaC allows developers and system administrators to define and manage their infrastructure using code.
 
-Infrastructure code = code that we write for machines to understand.
+**Infrastructure code = code that we write for machines to understand.**
 
 With Infrastructure as Code, the entire infrastructure stack, including servers, networks, storage, and other resources, is described and managed through code<!-- , typically in a declarative or imperative programming language -->. The code defines the desired state of the infrastructure, specifying how it should be provisioned, configured, and deployed. 
 
@@ -47,7 +47,7 @@ Tools used for implementing Infrastructure as Code include:
 
 ![Ansible diagram](/images/ansible-diagram.png)
 
-Ansible is a popular **open-source configuration management and automation tool** that can be used for Infrastructure as Code (IaC) practices. It allows you to define and manage infrastructure resources, provision servers, configure software, and orchestrate complex deployments using declarative and idempotent playbooks **written in YAML**.
+Ansible is a popular **open-source configuration management and automation tool** that can be used for Infrastructure as Code (IaC) practices. It allows you to define and manage infrastructure resources, provision servers, configure software, and orchestrate complex deployments using declarative and idempotent playbooks written in YAML.
 
 Ansible's **simplicity**, **agentless** architecture, **power**, and strong community support make it a popular choice for implementing Infrastructure as Code. It provides a straightforward and efficient way to automate infrastructure management, making it easier to achieve consistency, scalability, and reproducibility across different environments.
 
@@ -55,19 +55,19 @@ We use **configuration management** to **automate and manage the configuration o
 
 **Why we use Ansible:**
 
-- Simple = few lines of code/commands to set up.
-- Agentless = the agent nodes do not need Ansible installed. Ansible only needs to be on the controller node. It is no longer necessary to SSH into Agents, as the Ansible Controller is where you do everything.
-- Powerful = can manage and facilitate 2 - 200 000 servers running anywhere in the world on any cloud platform. The controller could be configured locally or globally, and can easily communicate with all the servers at the same time, do different tasks inside individual servers at the same time.
+- **Simple** = few lines of code/commands to set up.
+- **Agentless** = the agent nodes do not need Ansible installed. Ansible only needs to be on the controller node. It is no longer necessary to SSH into Agents, as the Ansible Controller is where you do everything.
+- **Powerful** = can manage and facilitate 2 - 200 000 servers running anywhere in the world on any cloud platform. The controller could be configured locally or globally, and can easily communicate with all the servers at the same time, do different tasks inside individual servers at the same time.
 
-Ansible can be run: hybrid, cloud, or local.
+Ansible can be run: hybrid, cloud-based (globally), or locally.
 
-Dependencies:
+-- Knowledge Dependencies:
 
-Ansible was written with Python, thus requires that Python is installed. It uses YAML to interact.
+_Ansible was written with Python, thus requires that Python is installed. It uses YAML to interact. You need to know how to code YAML._
 
-Know how to create/use passwords and SSH keys.
+_Know how to create/use passwords and SSH keys._
 
-Requires Vagrant/alternative VM provider installed/available.
+_Requires Vagrant/alternative VM provider installed/available and knowledge on how to use and set up VMs._
 
 [Ansible official page with documentation](https://www.ansible.com/)
 
@@ -243,7 +243,7 @@ password: -->
 
 Adhoc commands typically follow this format: `ansible <target_hosts> -m <module_name> -a "<module_arguments>"`.
 
-Using adhoc commands allows you to perform quick tasks or execute simple modules on remote hosts managed by Ansible (from the controller).
+Using adhoc commands allows you to perform quick tasks or execute simple modules on remote hosts managed by Ansible (from the controller VM).
 
 Adhoc commands are useful for performing quick tasks, gathering information, making changes, or running modules on remote hosts without the need to create a full-fledged playbook. They are typically only run once.
 
@@ -276,9 +276,7 @@ Useful module_arguments:
 
 ### <a id="ansible-playbooks---yaml">Ansible Playbooks - YAML</a>
 
-Ansible playbooks are configuration files that define a set of tasks to be executed on remote systems.
-They are re-usable (i.e. idempotent) - just need to change the hosts and add keys.
-They are written in YAML.
+**Playbooks** in Ansible are **written in YAML format** and **describe the desired state of the system or infrastructure** (i.e. **configuration files**). Playbooks consist of a **set of tasks**, where each **task defines a specific action to be performed**, such as installing packages, modifying configurations, or restarting services **to be executed on remote systems**. They are **re-usable** (i.e. **idempotent**) - just need to change the hosts and add keys.
 
 ![Ansible Playbooks](/images/playbook.png)
 
@@ -351,7 +349,7 @@ Nginx Reverse Proxy playbook:
 
 #### <a id="ansible-copy-app-playbook">Ansible Copy 'app' Playbook</a>
 
-If app is not on the controller VM already use this command to copy it over: `scp -r app/ vagrant@192.168.33.12:/home/vagrant/`.
+If app is not on the controller VM already (from setting it up to sync in the Vagrantfile) use this command to copy it over: `scp -r app/ vagrant@192.168.33.12:/home/vagrant/`.
 
 Playbook for copying over the app folder:
 

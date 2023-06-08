@@ -13,6 +13,8 @@
       - [Ansible NodeJS Playbook](#ansible-nodejs-playbook)
       - [Ansible Set Up MongoDB Playbook](#ansible-set-up-mongodb-playbook)
       - [Ansible Start App Playbook](#ansible-start-app-playbook)
+  - [IaC with Terraform](#iac-with-terraform)
+    - [Install Terraform on Windows](#install-terraform-on-windows)
 
 ## <a id="what-is-iac">What is IaC?</a>
 
@@ -286,6 +288,13 @@ YAML (YAML Ain't Markup Language) is a human-readable data serialization format.
 - YAML uses a hierarchy of key-value pairs to represent data
 - `#` used to comment
 - emphasizes human readability and simplicity
+- created on Linux with `nano <file-name>.yml`
+- run on Linux using `ansible-playbook <file-name>.yml`
+
+Playbooks:
+
+- Set up `web` VM: [web_setup_playbook.yml](https://github.com/EstherSlabbert/Infrastructure-as-Code/blob/main/web_setup_playbook.yml) or fragmented [Nginx setup](#ansible-nginx-playbooks), [Copy app](#ansible-copy-app-playbook), [NodeJS setup](#ansible-nodejs-playbook), [Environment variable for connection to DB and start app](#ansible-start-app-playbook).
+- Set up `db` VM: [db_setup_playbook.yml](https://github.com/EstherSlabbert/Infrastructure-as-Code/blob/main/db_setup_playbook.yml) or [MongoDB setup](#ansible-set-up-mongodb-playbook).
 
 #### <a id="ansible-nginx-playbooks">Ansible Nginx Playbooks</a>
 
@@ -507,6 +516,7 @@ sudo nano start_app.yml
 ```
 2. Write tasks/instructions in playbook:
 ```yaml
+# Start the web app, 'app.js', found in the app folder:
 # --- starts YAML file
 ---
 # states hosts name
@@ -515,10 +525,6 @@ sudo nano start_app.yml
   gather_facts: yes
 # gives admin privileges to this file
   become: true
-# Start app.js in the app folder:
-# add permanent environment variable 'DB_HOST=192.168.33.11:27017/posts' to .bashrc so that the app connects to db
-# install app dependencies in the app folder
-# use pm2 to start app.js in the app folder
   tasks:
   - name: Add DB_HOST environment variable to .bashrc
     lineinfile:
@@ -572,11 +578,30 @@ sudo nano start_app.yml
 sudo ansible-playbook start_app.yml
 # checks changes to .bashrc
 sudo ansible web -a "cat ~/.bashrc"
-# checks status of app running on pm2
+# checks status of app running
 sudo ansible web -a "pm2 status"
 ```
 Go to the [web VM's IP](http://192.168.33.10/) in your web browser to see if app is running, then try the [/posts page](http://192.168.33.10/posts) and [/fibonnacci/10 page](http://192.168.33.10/fibonacci/10).
 
-<!-- ## <a id="iac-with-terraform">IaC with Terraform</a>
+## <a id="iac-with-terraform">IaC with Terraform</a>
 
-Terraform is an Orchestration tool. -->
+Terraform is an Orchestration tool.
+
+### <a id="install-terraform-on-windows">Install Terraform on Windows</a>
+
+1. Go to this site: [Hashicorp - Terraform download](https://developer.hashicorp.com/terraform/downloads) and download the version of Terraform you want.
+2. Create a folder in `C:\` called `terraform`.
+3. Move the zipped download to `C:\terraform`.
+4. Extract the zipped files and move the terraform application file into `C:\terraform` so it looks like this:
+![terraform folder](/images/terraform-install-folder.png)
+5. Use the search bar to open `Settings` and use its search bar to look up 'environment variables' and click on `Edit the system environment variables`:
+![Environment variable 1](/images/terraform-install-system-env-variable1.png)
+6. It should pop up with 'System Properties' and under the 'Advanced' tab click on `Environment Variables...`:
+![Environment variable 2](/images/terraform-install-system-env-variable2.png)
+7. It should pop up with 'Environment Variables' and under the 'System variables' click `New`:
+![Environment variable 3](/images/terraform-install-system-env-variable3.png)
+8. It should pop up with 'New System Variable'. In the 'Variable name:' box type `Path` and in the 'Variable value:' box type `C:\terraform`. Then click `OK` for all the pop ups to save and close them.
+![Environment variable 4](/images/terraform-install-system-env-variable4.png)
+9. Verify Terraform's installation in the Git Bash terminal using `terraform --version` to see the version installed or in the standard command terminal `terraform`, which should return a list of commands if terraform installed successfully.
+
+If you have a different operating system see the following: [Spacelift guide to install Terraform](https://spacelift.io/blog/how-to-install-terraform).

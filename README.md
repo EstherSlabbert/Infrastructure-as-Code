@@ -541,12 +541,10 @@ sudo nano start_app.yml
 # The changed_when: false directive is added to avoid unnecessary changes reported by Ansible.
     changed_when: false
     
-  - name: Stop running app with PM2
-    shell: pm2 stop app
+  - name: Stop running app
+    shell: npm stop app
     args:
       chdir: /home/vagrant/app
-    register: pm2_stopped
-    changed_when: "'stopped' in pm2_stopped.stdout"
 
   - name: Install app dependencies
     shell: npm install
@@ -561,11 +559,12 @@ sudo nano start_app.yml
       chdir: /home/vagrant/app
       # ignores warnings
       warn: false
-      
-  - name: Start the app with PM2
-    shell: pm2 start app.js --update-env
+
+  - name: Run npm start in the background
+    shell: "cd /home/vagrant/app && nohup npm start > /dev/null 2>&1 &"
     args:
-      chdir: /home/vagrant/app
+      executable: /bin/bash
+
 ```
 3. Run playbook:
 ```bash

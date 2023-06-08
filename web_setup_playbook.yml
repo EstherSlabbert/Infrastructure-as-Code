@@ -82,9 +82,9 @@
     poll: 0
     # changed_when: false directive avoids unnecessary changes reported by Ansible
     changed_when: false
-  # kills app running on pm2
-  - name: Stop running app with PM2
-    shell: pm2 kill
+  # stops app running
+  - name: Stop running app
+    shell: npm stop app
     args:
       chdir: /home/vagrant/app
   # installs app dependenices in app directory
@@ -101,10 +101,10 @@
       chdir: /home/vagrant/app
       # ignores warnings
       warn: false
-  # starts app with updated env variable DB_HOST using pm2
-  - name: Start the app with PM2
-    shell: pm2 start app.js --update-env
+  # starts app with updated env variable DB_HOST
+  - name: Run npm start in the background
+    shell: "cd /home/vagrant/app && nohup npm start > /dev/null 2>&1 &"
     args:
-      chdir: /home/vagrant/app
+      executable: /bin/bash
 
   

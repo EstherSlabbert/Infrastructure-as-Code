@@ -593,15 +593,25 @@ Terraform is an Orchestration tool.
 2. Create a folder in `C:\` called `terraform`.
 3. Move the zipped download to `C:\terraform`.
 4. Extract the zipped files and move the terraform application file into `C:\terraform` so it looks like this:
+
 ![terraform folder](/images/terraform-install-folder.png)
+
 5. Use the search bar to open `Settings` and use its search bar to look up 'environment variables' and click on `Edit the system environment variables`:
+
 ![Environment variable 1](/images/terraform-install-system-env-variable1.png)
+
 6. It should pop up with 'System Properties' and under the 'Advanced' tab click on `Environment Variables...`:
+
 ![Environment variable 2](/images/terraform-install-system-env-variable2.png)
+
 7. It should pop up with 'Environment Variables' and under the 'System variables' click `New`:
+
 ![Environment variable 3](/images/terraform-install-system-env-variable3.png)
+
 8. It should pop up with 'New System Variable'. In the 'Variable name:' box type `Path` and in the 'Variable value:' box type `C:\terraform`. Then click `OK` for all the pop ups to save and close them.
+
 ![Environment variable 4](/images/terraform-install-system-env-variable4.png)
+
 9. Verify Terraform's installation in the Git Bash terminal using `terraform --version` to see the version installed or in the standard command terminal `terraform`, which should return a list of commands if terraform installed successfully.
 
 If you have a different operating system see the following: [Spacelift guide to install Terraform](https://spacelift.io/blog/how-to-install-terraform).

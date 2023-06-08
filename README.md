@@ -554,11 +554,6 @@ sudo nano start_app.yml
       chdir: /home/vagrant/app
     changed_when: false
 
-  - name: Start the app with PM2
-    shell: pm2 start app.js --update-env
-    args:
-      chdir: /home/vagrant/app
-
   - name: Seed database
     shell: node seeds/seed.js
     args:
@@ -566,6 +561,11 @@ sudo nano start_app.yml
       chdir: /home/vagrant/app
       # ignores warnings
       warn: false
+      
+  - name: Start the app with PM2
+    shell: pm2 start app.js --update-env
+    args:
+      chdir: /home/vagrant/app
 ```
 3. Run playbook:
 ```bash

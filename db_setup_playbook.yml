@@ -1,0 +1,37 @@
+# Installing required version of mongodb in db-server
+# hosts entries are already done - ssh/password authentication in place
+---
+# hosts name
+- hosts: db
+# get facts/logs
+  gather_facts: yes
+# admin access
+  become: true
+# add instructions:
+# install mongodb
+  tasks:
+  - name: Setting Up MongoDB
+    apt: pkg=mongodb state=present
+# ensure db is running (status actively running)
+# replaces bind_ip to allow access for web to connect to database
+  - name: Change BindIP to allow web VM access
+    replace:
+      path: /etc/mongodb.conf
+      regexp: 'bind_ip = 127.0.0.1'
+      replace: 'bind_ip = 0.0.0.0'
+# uncomments port = 27017
+  - name: Ensure port 27017 is uncommented
+    replace:
+      path: /etc/mongodb.conf
+      regexp: '#port = 27017'
+      replace: 'port = 27017'
+# restarts mongodb with changes made to mongodb.conf
+  - name: Restart MongoDB service
+    systemd:
+      name: mongodb
+      state: restarted
+# enables mongodb
+  - name: Enable MongoDB service
+    systemd:
+      name: mongodb
+      enabled: yes

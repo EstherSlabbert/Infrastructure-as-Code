@@ -1,0 +1,110 @@
+# --- starts YAML file
+---
+# states hosts name
+- hosts: web
+# gather additional facts about the steps (optional)
+  gather_facts: yes
+# gives admin privileges to this file
+  become: true
+# Start app.js in the app folder:
+# add permanent environment variable 'DB_HOST=192.168.33.11:27017/posts' to .bashrc so that the app connects to db
+# install app dependencies in the app folder
+# use pm2 to start app.js in the app folder
+  tasks:
+  # installs nginx
+  - name: Installing Nginx
+    apt: pkg=nginx state=present # present=enables nginx, state=absent stops/removes
+  # sets up reverse proxy
+  - name: Set up Nginx reverse proxy
+    # replaces try_files line with proxy_pass line in nginx default file
+    replace:
+      path: /etc/nginx/sites-available/default
+      regexp: 'try_files \$uri \$uri/ =404;'
+      replace: 'proxy_pass http://localhost:3000/;'
+  # reloads Nginx to put reverse proxy in action
+  - name: Reload Nginx to apply changes
+    systemd:
+      name: nginx
+      state: reloaded
+  # copies app folder
+  - name: Copy App folder
+    copy:
+      src: /home/vagrant/app
+      dest: /home/vagrant/
+  # updates system in preparation for installations
+  - name: Update system
+  apt:
+    update_cache: yes
+  # ensures curl is available to add nodejs repo
+  - name: Install curl
+    apt:
+      name: curl
+      state: present
+  # adds nodejs repo for needed version of nodejs
+  - name: Add Node.js 12.x repository
+    # uses the shell module to run the curl command and execute the Node.js setup script to add the repository
+    shell: curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+    args:
+      # ignores the warnings and proceeds
+      warn: false
+  # installs nodejs from added repo
+  - name: Install Node.js
+    # uses the apt module to install the nodejs package
+    apt:
+      name: nodejs
+        # state parameter is set to present to ensure Node.js is installed
+      state: present
+        # update_cache: yes ensures that the package manager cache is updated before installing
+      update_cache: yes
+  # installs pm2
+  - name: Install pm2 globally
+      # ensures admin privileges
+    become: true
+    command: npm install pm2 -g
+  # creates DB_HOST environment variable permanently
+  - name: Add DB_HOST environment variable to .bashrc
+    lineinfile:
+      # sets destination to .bashrc file
+      path: /home/vagrant/.bashrc
+      # specifies line to be added
+      line: 'export DB_HOST=mongodb://192.168.33.11:27017/posts'
+      # ensures line is added at the end of the file
+      insertafter: EOF
+      state: present
+    notify: Reload bashrc
+  # reloads bashrc to put DB_HOST in effect
+  - name: Reload bashrc
+    shell: source /home/vagrant/.bashrc
+    args:
+      executable: /bin/bash
+    # It is set to run asynchronously with async: 0 and poll: 0 to ensure it runs immediately and does not affect subsequent tasks.
+    async: 0
+    poll: 0
+    # changed_when: false directive avoids unnecessary changes reported by Ansible
+    changed_when: false
+  # kills app running on pm2
+  - name: Stop running app with PM2
+    shell: pm2 kill
+    args:
+      chdir: /home/vagrant/app
+  # installs app dependenices in app directory
+  - name: Install app dependencies
+    shell: npm install
+    args:
+      chdir: /home/vagrant/app
+    changed_when: false
+  # seeds database
+  - name: Seed database
+    shell: node seeds/seed.js
+    args:
+      # changes to correct directory
+      chdir: /home/vagrant/app
+      # ignores warnings
+      warn: false
+  # starts app with updated env variable DB_HOST using pm2
+  - name: Start the app with PM2
+    shell: pm2 start app.js --update-env
+    args:
+      chdir: /home/vagrant/app
+
+  

@@ -15,6 +15,7 @@
       - [Ansible Start App Playbook](#ansible-start-app-playbook)
   - [IaC with Terraform](#iac-with-terraform)
     - [Install Terraform on Windows](#install-terraform-on-windows)
+    - [Setup Terraform on Windows](#setup-terraform-on-windows)
 
 ## <a id="what-is-iac">What is IaC?</a>
 
@@ -585,7 +586,14 @@ Go to the [web VM's IP](http://192.168.33.10/) in your web browser to see if app
 
 ## <a id="iac-with-terraform">IaC with Terraform</a>
 
-Terraform is an Orchestration tool.
+Terraform is an **Orchestration tool**. Terraform is an **open-source** infrastructure as code (IaC) tool developed by HashiCorp. It **enables you to define and provision infrastructure resources across various cloud providers and on-premises environments in a declarative and version-controlled manner**.
+
+Provision configuration file configures and deploys on Cloud Platform by any Cloud Service Provider if provided with the correct security permissions.
+
+With Terraform, you can describe your desired infrastructure configuration using a domain-specific language (DSL) called HashiCorp Configuration Language (HCL) or JSON. This configuration defines the desired state of your infrastructure, including resources such as virtual machines, networks, storage, security groups, and more.
+
+- .tf execution file
+- Need secret and access keys, have admin access on local machine, use git bash, and know how to set permanent environment variable
 
 ### <a id="install-terraform-on-windows">Install Terraform on Windows</a>
 
@@ -615,3 +623,48 @@ Terraform is an Orchestration tool.
 9. Verify Terraform's installation in the Git Bash terminal using `terraform --version` to see the version installed or in the standard command terminal `terraform`, which should return a list of commands if terraform installed successfully.
 
 If you have a different operating system see the following: [Spacelift guide to install Terraform](https://spacelift.io/blog/how-to-install-terraform).
+
+### <a id="Setup-terraform-on-windows">Setup Terraform on Windows</a>
+
+Add environment variables to account named `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY_ID` with their respecitve keys as the variables.
+
+Create a `main.tf` file in Git Bash (opened as admin) in a Terraform folder using `nano main.tf`.
+
+```
+# To create a service on AWS cloud
+# launch an ec2 in Ireland
+# terraform to download required packages
+# to run: terraform init
+
+provider "aws" {
+# which regions of AWS
+        region = "eu-west-1"
+
+}
+# git bash must have admin access
+# can run 'terraform init' here
+# Launch an ec2
+
+# which resource -
+resource "aws_instance" "app_instance"{
+
+# which AMI - ubuntu 18.04
+        ami = "<ami-id>"
+
+# type of instance t2.micro
+        instance_type = "t2.micro"
+
+# do you need public IP = yes
+        associate_public_ip_address = true
+
+# what would you like to call it
+        tags = {
+                Name = "<name-of-instance>"
+}
+
+}
+```
+`terraform init` - initializes terraform
+`terraform plan` - checks code to see what is executable/ if any errors
+`terraform apply` - will ask for confirmation `yes` then will launch service
+`terraform destroy` - will ask for confirmation `yes` then terminates service (i.e. instance)

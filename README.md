@@ -15,7 +15,7 @@
       - [Ansible Start App Playbook](#ansible-start-app-playbook)
   - [IaC with Terraform](#iac-with-terraform)
     - [Install Terraform on Windows](#install-terraform-on-windows)
-    - [Setup Terraform to interact with AWS](#setup-terraform-to-interact-with-aws)
+    - [Setup Terraform to interact with AWS and launch an EC2](#setup-terraform-to-interact-with-aws-and-launch-an-ec2)
     - [Terraform create two-tier VPC and EC2 instances](#terraform-create-two-tier-vpc-and-ec2-instances)
 
 ## <a id="what-is-iac">What is IaC?</a>
@@ -23,6 +23,8 @@
 Infrastructure as Code (IaC) is a software engineering approach and practice that involves **managing and provisioning computing infrastructure resources automatically** using machine-readable configuration files or scripts. Instead of manually setting up and configuring servers, networks, and other infrastructure components, IaC allows developers and system administrators to define and manage their infrastructure using code.
 
 **Infrastructure code = code that we write for machines to understand.**
+
+![End-to-end IaC](/images/end-to-end-iac.png)
 
 With Infrastructure as Code, the entire infrastructure stack, including servers, networks, storage, and other resources, is described and managed through code<!-- , typically in a declarative or imperative programming language -->. The code defines the desired state of the infrastructure, specifying how it should be provisioned, configured, and deployed. 
 
@@ -199,15 +201,6 @@ sudo nano /etc/ansible/hosts
 # save and exit
 ```
 Ping your hosts/agents:
-<!---
-If you get this error while pinging:
-```bash
-192.168.33.11 | FAILED! => {
-    "msg": "Using a SSH password instead of a key is not possible because Host Key checking is enabled and sshpass does not support this.  Please add this host's fingerprint to your known_hosts file to manage this host."
-}
-```
-Edit: /etc/ansible/ansible.cfg under '[defaults]' uncomment 'host_key_checking = False' and under '[ssh_connection]' paste 'host_key_checking = False' to bypass ssh host checking
---->
 
 ```shell
 # looks for all agents in hosts file and sends ping requests if found and will respond with 'pong' if successful
@@ -238,12 +231,21 @@ yes
 #    "ping": "pong"
 #}
 ```
-<!-- Default ansible file structure:
-/etc/ansible/hosts stores hosts/agents addresses
-/etc/ansible/ansible.conf contains ansibles configurations
+---
+**NOTE:**
 
+If you get this error while pinging:
+```
+192.168.33.11 | FAILED! => {
+    "msg": "Using a SSH password instead of a key is not possible because Host Key checking is enabled and sshpass does not support this.  Please add this host's fingerprint to your known_hosts file to manage this host."
+}
+```
+Edit: `/etc/ansible/ansible.cfg` under '[defaults]' uncomment `host_key_checking = False` and under '[ssh_connection]' paste `host_key_checking = False` to bypass ssh host checking and then ping again. Once ping is successful comment out both `host_key_checking = False` lines in `/etc/ansible/ansible.cfg`.
+
+<!--
 sudo ansible all -m ping --ask-vault-pass
-password: -->
+password:
+-->
 ### <a id="adhoc-commands-with-ansible">Adhoc Commands with Ansible</a>
 
 Adhoc commands typically follow this format: `ansible <target_hosts> -m <module_name> -a "<module_arguments>"`.
@@ -260,7 +262,7 @@ sudo ansible web -a "uname -a"
 # uses ansible to get OS of db host
 sudo ansible db -a "uname -a"
 ```
-Use adhoc command to move files/folders to a target_host(s)
+Use adhoc command to move files/folders to a target_host(s):
 ```bash
 # create a file on controller
 sudo nano test.txt
@@ -283,7 +285,9 @@ Useful module_arguments:
 
 **Playbooks** in Ansible are **written in YAML format** and **describe the desired state of the system or infrastructure** (i.e. **configuration files**). Playbooks consist of a **set of tasks**, where each **task defines a specific action to be performed**, such as installing packages, modifying configurations, or restarting services **to be executed on remote systems**. They are **re-usable** (i.e. **idempotent**) - just need to change the hosts and add keys.
 
-![Ansible Playbooks](/images/playbook.png)
+![Ansible App Playbook](/images/app-playbook-diagram.png)
+
+![Ansible DB Playbook](/images/ansible-db-playbook-diagram.png)
 
 YAML (YAML Ain't Markup Language) is a human-readable data serialization format. It is often used in configuration files, data exchange, and markup languages.
 - indent in YAML = 2 spaces
@@ -591,13 +595,16 @@ Terraform is an **Orchestration tool**. Terraform is an **open-source** infrastr
 
 Provision configuration file configures and deploys on Cloud Platform by any Cloud Service Provider if provided with the correct security permissions.
 
+![Terraform diagram](/images/terraform-diagram.png)
+
 Terraform controls 1 with about 10 lines of code. Ansible would use about 50 lines of code, but could configure thousands at once.
 
 With Terraform, you can describe your desired infrastructure configuration using a domain-specific language (DSL) called HashiCorp Configuration Language (HCL) or JSON. This configuration defines the desired state of your infrastructure, including resources such as virtual machines, networks, storage, security groups, and more.
 
 - .tf execution file
 - Need secret and access keys, have admin access on local machine, use git bash, and know how to set permanent environment variable
-- [Terraform documentation](https://developer.hashicorp.com/terraform/docs)
+
+[Terraform documentation](https://developer.hashicorp.com/terraform/docs)
 
 ### <a id="install-terraform-on-windows">Install Terraform on Windows</a>
 
@@ -628,7 +635,7 @@ With Terraform, you can describe your desired infrastructure configuration using
 
 If you have a different operating system see the following: [Spacelift guide to install Terraform](https://spacelift.io/blog/how-to-install-terraform).
 
-### <a id="Setup-terraform-to-interact-with-aws">Setup Terraform to interact with AWS</a>
+### <a id="Setup-terraform-to-interact-with-aws-and-launch-an-ec2">Setup Terraform to interact with AWS and launch an EC2</a>
 
 1. Add environment variables to account named `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY_ID` with their respecitve keys as the variables.
 
@@ -669,18 +676,18 @@ resource "aws_instance" "app_instance"{
 
 }
 ```
-4. `terraform init` - initializes terraform
-5. `terraform plan` - checks code to see what is executable/ if any errors
-6. `terraform apply` - will ask for confirmation `yes` then will launch service (i.e. EC2 instance) outlined in `main.tf`
-7. `terraform destroy` - will ask for confirmation `yes` then terminates service (i.e. EC2 instance) outlined in `main.tf`
+4. `terraform init` - initializes terraform.
+5. `terraform plan` - checks code to see what is executable/ if any errors.
+6. `terraform apply` - will ask for confirmation `yes` then will launch service (i.e. EC2 instance) outlined in `main.tf`.
+7. `terraform destroy` - will ask for confirmation `yes` then terminates service (i.e. EC2 instance) outlined in `main.tf`.
 
 ### <a id="terraform-create-two-tier-vpc-and-ec2-instances">Terraform create two-tier VPC and EC2 instances</a>
 
 [Terraform documentation on VPCs with AWS](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc)
 
-Steps to automate setting up a VPC for a 2-tier architecture deployment of the Sparta Provisioning Test App to display the Sparta home page, /posts page and /fibonacci/10 page using the web app server's public IP address:
+Steps to automate setting up a VPC for a 2-tier architecture deployment of a database and the Sparta Provisioning Test App to display the Sparta home page, /posts page and /fibonacci/10 page using the web app server's public IP address:
 
-1. Create a file called `main.tf` or another name in a folder.
+1. Create a file called `main.tf` or another name in a folder. (If not done already: Add environment variables to account named `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY_ID` with their respecitve keys as the variables.)
 2. Write the following template to your terraform file and edit (Remember to change the names of each resource, use appropriate CIDR blocks, and add the AMI IDs and your own IP where needed):
 ```terraform
 # define provider and region
@@ -951,5 +958,5 @@ resource "aws_instance" "web-app-server" {
 3. Initialize your terraform file with `terraform init` or `terraform init -var-file=/path/to/your/terraform-file.tf` (replace with actual path to terraform file).
 4. Check your code with `terraform plan`  or `terraform plan -var-file=/path/to/your/terraform-file.tf` (replace with actual path to terraform file).
 5. If you are satisfied run your code with `terraform apply`  or `terraform apply -var-file=/path/to/your/terraform-file.tf` (replace with actual path to terraform file) and confirm by entering `yes`.
-6. Log in to AWS and get the public IP from your web app EC2 instance and go to the pages of the IP, '/posts' and '/fibonacci/10' of the app in your web browser.
+6. Log in to AWS and get the public IP from your web app EC2 instance and go to the page of the IP, '/posts' and '/fibonacci/10' of the app in your web browser.
 7. If you wish to delete/remove all you added to AWS run `terraform destroy`  or `terraform destroy -var-file=/path/to/your/terraform-file.tf` (replace with actual path to terraform file) and confirm by entering `yes`.

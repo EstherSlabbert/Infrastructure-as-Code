@@ -15,7 +15,8 @@
       - [Ansible Start App Playbook](#ansible-start-app-playbook)
   - [IaC with Terraform](#iac-with-terraform)
     - [Install Terraform on Windows](#install-terraform-on-windows)
-    - [Setup Terraform on Windows](#setup-terraform-on-windows)
+    - [Setup Terraform to interact with AWS](#setup-terraform-to-interact-with-aws)
+    - [Terraform create two-tier VPC and EC2 instances](#terraform-create-two-tier-vpc-and-ec2-instances)
 
 ## <a id="what-is-iac">What is IaC?</a>
 
@@ -590,10 +591,13 @@ Terraform is an **Orchestration tool**. Terraform is an **open-source** infrastr
 
 Provision configuration file configures and deploys on Cloud Platform by any Cloud Service Provider if provided with the correct security permissions.
 
+Terraform controls 1 with about 10 lines of code. Ansible would use about 50 lines of code, but could configure thousands at once.
+
 With Terraform, you can describe your desired infrastructure configuration using a domain-specific language (DSL) called HashiCorp Configuration Language (HCL) or JSON. This configuration defines the desired state of your infrastructure, including resources such as virtual machines, networks, storage, security groups, and more.
 
 - .tf execution file
 - Need secret and access keys, have admin access on local machine, use git bash, and know how to set permanent environment variable
+- [Terraform documentation](https://developer.hashicorp.com/terraform/docs)
 
 ### <a id="install-terraform-on-windows">Install Terraform on Windows</a>
 
@@ -624,13 +628,14 @@ With Terraform, you can describe your desired infrastructure configuration using
 
 If you have a different operating system see the following: [Spacelift guide to install Terraform](https://spacelift.io/blog/how-to-install-terraform).
 
-### <a id="Setup-terraform-on-windows">Setup Terraform on Windows</a>
+### <a id="Setup-terraform-to-interact-with-aws">Setup Terraform to interact with AWS</a>
 
-Add environment variables to account named `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY_ID` with their respecitve keys as the variables.
+1. Add environment variables to account named `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY_ID` with their respecitve keys as the variables.
 
-Create a `main.tf` file in Git Bash (opened as admin) in a Terraform folder using `nano main.tf`.
+2. Create a `main.tf` file in Git Bash (opened as admin) in a Terraform folder using `nano main.tf`.
 
-```
+3. Write to main.tf, then save and exit:
+```terraform
 # To create a service on AWS cloud
 # launch an ec2 in Ireland
 # terraform to download required packages
@@ -664,7 +669,207 @@ resource "aws_instance" "app_instance"{
 
 }
 ```
-`terraform init` - initializes terraform
-`terraform plan` - checks code to see what is executable/ if any errors
-`terraform apply` - will ask for confirmation `yes` then will launch service
-`terraform destroy` - will ask for confirmation `yes` then terminates service (i.e. instance)
+4. `terraform init` - initializes terraform
+5. `terraform plan` - checks code to see what is executable/ if any errors
+6. `terraform apply` - will ask for confirmation `yes` then will launch service (i.e. EC2 instance) outlined in `main.tf`
+7. `terraform destroy` - will ask for confirmation `yes` then terminates service (i.e. EC2 instance) outlined in `main.tf`
+
+### <a id="terraform-create-two-tier-vpc-and-ec2-instances">Terraform create two-tier VPC and EC2 instances</a>
+
+[Terraform documentation on VPCs with AWS](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc)
+
+1. Create a file called `main.tf` in a folder.
+2. Write the following to `main.tf` (Remember to change the names of each resource and use appropriate CIDR blocks, and add the AMI IDs and your own IP where needed):
+```terraform
+# define provider and region
+provider "aws" {
+	region = "eu-west-1"
+}
+
+# VPC and dependencies
+
+# create vpc
+resource "aws_vpc" "my_vpc" {
+# specify CIDR block
+	cidr_block = "10.0.0.0/16"
+# name vpc
+	tags = {
+		Name = "tech230-esther-vpc-terraform"
+	}
+}
+
+# create internet gateway (igw)
+resource "aws_internet_gateway" "igw" {
+# link igw to vpc
+	vpc_id = aws_vpc.my_vpc.id
+# name igw
+	tags = {
+		Name = "tech230-esther-igw-terraform"
+	}
+}
+
+# create private subnet within vpc
+resource "aws_subnet" "private_subnet" {
+# attach subnet to specified vpc
+  vpc_id = aws_vpc.my_vpc.id
+# specify CIDR block for subnet
+  cidr_block = "10.0.3.0/24"
+# name subnet
+  tags = {
+          Name = "tech230-esther-private-subnet-terraform"
+  }
+}
+
+# create public subnet within vpc
+resource "aws_subnet" "public_subnet" {
+# attach subnet to specified vpc
+  vpc_id = aws_vpc.my_vpc.id
+# specify CIDR block for subnet
+  cidr_block = "10.0.2.0/24"
+# name subnet
+  tags = {
+          Name = "tech230-esther-public-subnet-terraform"
+  }
+}
+
+# create public route table
+resource "aws_route_table" "public_route_table" {
+# link to vpc
+	vpc_id = aws_vpc.my_vpc.id
+# name route table
+	tags = {
+		Name = "tech230-esther-public-RT-terraform"
+	}
+}
+
+# creating route in public route table and associates with igw
+resource "aws_route" "public_route" {
+# specifies this route table for association with igw
+	route_table_id = aws_route_table.public_route_table.id
+# routes all traffic to igw
+	destination_cidr_block = "0.0.0.0/0"
+# specifies association to this igw
+	gateway_id = aws_internet_gateway.igw.id
+}
+
+# associates public route table with public subnet
+resource "aws_route_table_association" "public_subnet_association" {
+# specifies subnet to be associated
+	subnet_id = aws_subnet.public_subnet.id
+# specifies route table to be associated
+	route_table_id = aws_route_table.public_route_table.id
+}
+
+# Security Groups
+
+# Create security group for web app server
+resource "aws_security_group" "tech230-esther-app-server-sg" {
+	name        = "tech230-esther-app-server-sg"
+	description = "Security group for Sparta Provisioning Test App web server"
+	vpc_id      = aws_vpc.my_vpc.id
+
+	# Inbound rule for SSH access from my IP
+	ingress {
+    # SSH port
+		from_port   = 22
+		to_port     = 22
+		protocol    = "tcp"
+		# specifies my ip so I can access the app server via ssh
+		cidr_blocks = ["<my-ip>/32"] # replace <my-ip> with actual IP
+	}
+  
+	# Inbound rule for HTTP access from all
+	ingress {
+    # HTTP port
+		from_port   = 80
+		to_port     = 80
+		protocol    = "tcp"
+    # all access allowed
+		cidr_blocks = ["0.0.0.0/0"]
+	}
+
+	# Inbound rule for port 3000 access from all
+	ingress {
+		from_port   = 3000
+		to_port     = 3000
+		protocol    = "tcp"
+		cidr_blocks = ["0.0.0.0/0"]
+	}
+
+	# Inbound rule for MongoDB access from private subnet
+	ingress {
+		from_port   = 27017
+		to_port     = 27017
+		protocol    = "tcp"
+		# specifies private subnet CIDR block for connecting with DB
+		cidr_blocks = ["10.0.3.0/24"]
+	}
+
+	# Outbound rule allowing all traffic
+	egress {
+		from_port   = 0
+		to_port     = 0
+		protocol    = "-1"
+    # all access allowed
+		cidr_blocks = ["0.0.0.0/0"]
+	}
+}
+
+# Create security group for DB server
+resource "aws_security_group" "tech230-esther-db-server-sg" {
+	name        = "tech230-esther-db-server-sg"
+	description = "Security group for MongoDB server"
+	vpc_id      = aws_vpc.my_vpc.id
+
+	# Inbound rule for MongoDB access from app server in public subnet
+	ingress {
+		from_port        = 27017
+		to_port          = 27017
+		protocol         = "tcp"
+    # specifies public subnet cidr block for connecting with app
+		cidr_blocks = ["10.0.2.0/24"]
+	}
+
+	# Outbound rule allowing all traffic
+	egress {
+		from_port   = 0
+		to_port     = 0
+		protocol    = "-1"
+		cidr_blocks = ["0.0.0.0/0"]
+	}
+}
+
+# Launch EC2 instances from AMIs
+
+# Launch app server EC2 instance in public subnet
+resource "aws_instance" "tech230-esther-web-app" {
+	# ami for app
+	ami           = "<ami-id>" # replace <ami-id> with actual ami id
+	instance_type = "t2.micro"
+	key_name      = "tech230"
+	subnet_id     = aws_subnet.public_subnet.id
+	vpc_security_group_ids = [aws_security_group.tech230-esther-app-server-sg.id]
+	associate_public_ip_address = true
+
+	tags = {
+		Name = "tech230-esther-web-app"
+	}
+}
+
+# Launch DB server EC2 instance in private subnet
+resource "aws_instance" "tech230-esther-db" {
+	# ami for db
+	ami           = "<ami-id>" # replace <ami-id> with actual ami id
+	instance_type = "t2.micro"
+	key_name      = "tech230"
+	subnet_id     = aws_subnet.private_subnet.id
+	vpc_security_group_ids = [aws_security_group.tech230-esther-db-server-sg.id]
+
+	tags = {
+		Name = "tech230-esther-db"
+	}
+}
+```
+3. Check your code with `terraform plan`.
+4. If you are satisfied run your code with `terraform apply` and confirm.
+5. If you wish to delete/remove all you added to AWS run `terraform destroy` and confirm.

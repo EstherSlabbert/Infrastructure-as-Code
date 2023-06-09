@@ -678,12 +678,14 @@ resource "aws_instance" "app_instance"{
 
 [Terraform documentation on VPCs with AWS](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc)
 
-1. Create a file called `main.tf` in a folder.
-2. Write the following to `main.tf` (Remember to change the names of each resource and use appropriate CIDR blocks, and add the AMI IDs and your own IP where needed):
+Steps to automate setting up a VPC for a 2-tier architecture deployment of the Sparta Provisioning Test App to display the Sparta home page, /posts page and /fibonacci/10 page using the web app server's public IP address:
+
+1. Create a file called `main.tf` or another name in a folder.
+2. Write the following template to your terraform file and edit (Remember to change the names of each resource, use appropriate CIDR blocks, and add the AMI IDs and your own IP where needed):
 ```terraform
 # define provider and region
 provider "aws" {
-	region = "eu-west-1"
+	region = "eu-west-1" # specify the region you are working with
 }
 
 # VPC and dependencies
@@ -691,10 +693,10 @@ provider "aws" {
 # create vpc
 resource "aws_vpc" "my_vpc" {
 # specify CIDR block
-	cidr_block = "10.0.0.0/16"
+	cidr_block = "10.0.0.0/16" # replace with your used CIDR block
 # name vpc
 	tags = {
-		Name = "tech230-esther-vpc-terraform"
+		Name = "<name-of-vpc>" # replace with desired name
 	}
 }
 
@@ -704,7 +706,7 @@ resource "aws_internet_gateway" "igw" {
 	vpc_id = aws_vpc.my_vpc.id
 # name igw
 	tags = {
-		Name = "tech230-esther-igw-terraform"
+		Name = "<name-of-igw>" # replace with desired name
 	}
 }
 
@@ -713,10 +715,10 @@ resource "aws_subnet" "private_subnet" {
 # attach subnet to specified vpc
   vpc_id = aws_vpc.my_vpc.id
 # specify CIDR block for subnet
-  cidr_block = "10.0.3.0/24"
+  cidr_block = "10.0.3.0/24" # replace with your used CIDR block
 # name subnet
   tags = {
-          Name = "tech230-esther-private-subnet-terraform"
+          Name = "<name-of-private-subnet>" # replace with desired name
   }
 }
 
@@ -725,10 +727,10 @@ resource "aws_subnet" "public_subnet" {
 # attach subnet to specified vpc
   vpc_id = aws_vpc.my_vpc.id
 # specify CIDR block for subnet
-  cidr_block = "10.0.2.0/24"
+  cidr_block = "10.0.2.0/24" # replace with your used CIDR block
 # name subnet
   tags = {
-          Name = "tech230-esther-public-subnet-terraform"
+          Name = "<name-of-public-subnet>" # replace with desired name
   }
 }
 
@@ -738,7 +740,7 @@ resource "aws_route_table" "public_route_table" {
 	vpc_id = aws_vpc.my_vpc.id
 # name route table
 	tags = {
-		Name = "tech230-esther-public-RT-terraform"
+		Name = "<name-of-public-route-table>" # replace with desired name
 	}
 }
 
@@ -763,8 +765,8 @@ resource "aws_route_table_association" "public_subnet_association" {
 # Security Groups
 
 # Create security group for web app server
-resource "aws_security_group" "tech230-esther-app-server-sg" {
-	name        = "tech230-esther-app-server-sg"
+resource "aws_security_group" "app-server-sg" {
+	name        = "<name-of-app-server-security-group>" # replace with desired name
 	description = "Security group for Sparta Provisioning Test App web server"
 	vpc_id      = aws_vpc.my_vpc.id
 
@@ -790,14 +792,17 @@ resource "aws_security_group" "tech230-esther-app-server-sg" {
 
 	# Inbound rule for port 3000 access from all
 	ingress {
+    # in case where the app server does not have a reverse proxy set up
 		from_port   = 3000
 		to_port     = 3000
 		protocol    = "tcp"
+    # all access allowed
 		cidr_blocks = ["0.0.0.0/0"]
 	}
 
 	# Inbound rule for MongoDB access from private subnet
 	ingress {
+    # default mongodb port
 		from_port   = 27017
 		to_port     = 27017
 		protocol    = "tcp"
@@ -816,13 +821,14 @@ resource "aws_security_group" "tech230-esther-app-server-sg" {
 }
 
 # Create security group for DB server
-resource "aws_security_group" "tech230-esther-db-server-sg" {
-	name        = "tech230-esther-db-server-sg"
+resource "aws_security_group" "db-server-sg" {
+	name        = "<name-of-db-server-security-group>" # replace with desired name
 	description = "Security group for MongoDB server"
 	vpc_id      = aws_vpc.my_vpc.id
 
 	# Inbound rule for MongoDB access from app server in public subnet
 	ingress {
+    # default mongodb port
 		from_port        = 27017
 		to_port          = 27017
 		protocol         = "tcp"
@@ -841,35 +847,109 @@ resource "aws_security_group" "tech230-esther-db-server-sg" {
 
 # Launch EC2 instances from AMIs
 
-# Launch app server EC2 instance in public subnet
-resource "aws_instance" "tech230-esther-web-app" {
-	# ami for app
-	ami           = "<ami-id>" # replace <ami-id> with actual ami id
+# Launch DB server EC2 instance in private subnet
+resource "aws_instance" "db-server" {
+	# ami for db
+	ami           = "<ami-id>" # replace <ami-id> with actual ami id of working db
+  # specifies instance type
 	instance_type = "t2.micro"
-	key_name      = "tech230"
-	subnet_id     = aws_subnet.public_subnet.id
-	vpc_security_group_ids = [aws_security_group.tech230-esther-app-server-sg.id]
-	associate_public_ip_address = true
+  # specifies key name for key pair
+	key_name      = "tech230" # replace with assigned key name
+  # associates this ec2 with the private subnet in the vpc
+	subnet_id     = aws_subnet.private_subnet.id
+  # fixes private IP address
+  private_ip    = "10.0.3.100" # specify desired private IP
+  # assigns relevant security group
+	vpc_security_group_ids = [aws_security_group.db-server-sg.id]
 
 	tags = {
-		Name = "tech230-esther-web-app"
+		Name = "<name-of-db-ec2-instance>" # replace with desired name
 	}
 }
 
-# Launch DB server EC2 instance in private subnet
-resource "aws_instance" "tech230-esther-db" {
-	# ami for db
-	ami           = "<ami-id>" # replace <ami-id> with actual ami id
+# Launch app server EC2 instance in public subnet
+resource "aws_instance" "web-app-server" {
+	# ami for app
+	ami           = "<ami-id>" # replace <ami-id> with actual ami id for default ubuntu 20.04 instance
+  # specifies instance type
 	instance_type = "t2.micro"
-	key_name      = "tech230"
-	subnet_id     = aws_subnet.private_subnet.id
-	vpc_security_group_ids = [aws_security_group.tech230-esther-db-server-sg.id]
+  # specifies key pair name
+	key_name      = "tech230" # replace with your assigned key name
+  # associates ec2 with public subnet in vpc
+	subnet_id     = aws_subnet.public_subnet.id
+  # assigns relevant security group
+	vpc_security_group_ids = [aws_security_group.app-server-sg.id]
+  # ensures this EC2 instance has a public IP
+	associate_public_ip_address = true
+  # ensures this ec2 only runs after db one as db is required for app to connect to
+  depends_on = [aws_instance.db-server]
+  # user data to setup and run the app on this instance
+  user_data = <<-EOF
+    #!/bin/bash
+
+    # Update the sources list and Upgrade any available packages
+    sudo apt update -y && sudo apt upgrade -y
+
+    # gets sources list that could potentially be needed for the following installations
+    sudo apt update
+
+    # Installs Nginx
+    sudo apt install nginx -y
+
+    # setup nginx reverse proxy
+    sudo apt install sed
+    # $ and / characters must be escaped by putting a backslash before them
+    sudo sed -i "s/try_files \$uri \$uri\/ =404;/proxy_pass http:\/\/localhost:3000\/;/" /etc/nginx/sites-available/default
+    # restart nginx to get reverse proxy working
+    sudo systemctl restart nginx
+
+    # Installs git
+    sudo apt install git -y
+
+    # sets source to retrieve nodejs
+    curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+
+    # installs node.js
+    sudo apt install -y nodejs
+
+    # Enables Nginx to run on start up of API or VM
+    sudo systemctl enable nginx
+
+    #echo "export DB_HOST=mongodb://10.0.3.100:27017/posts" >> ~/.bashrc
+    #source ~/.bashrc
+    # REMEMBER TO CHANGE IP if the mongoDB server private IP changed
+    export DB_HOST=mongodb://10.0.3.100:27017/posts
+
+    # clone repo with app folder into folder called 'repo'
+    git clone https://github.com/daraymonsta/CloudComputingWithAWS repo
+
+    # install the app (must be after db vm is finished provisioning)
+    cd repo/app
+    npm install
+
+    # seed database
+    echo "Clearing and seeding database..."
+    node seeds/seed.js
+    echo "  --> Done!"
+
+    # start the app (could also use 'npm start')
+
+    # using pm2
+    # install pm2
+    sudo npm install pm2 -g
+    # kill previous app background processes
+    pm2 kill
+    # start the app in the background with pm2
+    pm2 start app.js
+  EOF
 
 	tags = {
-		Name = "tech230-esther-db"
+		Name = "<name-of-web-app-server>" # replace with desired name
 	}
 }
 ```
-3. Check your code with `terraform plan`.
-4. If you are satisfied run your code with `terraform apply` and confirm.
-5. If you wish to delete/remove all you added to AWS run `terraform destroy` and confirm.
+3. Initialize your terraform file with `terraform init` or `terraform init -var-file=/path/to/your/terraform-file.tf` (replace with actual path to terraform file).
+4. Check your code with `terraform plan`  or `terraform plan -var-file=/path/to/your/terraform-file.tf` (replace with actual path to terraform file).
+5. If you are satisfied run your code with `terraform apply`  or `terraform apply -var-file=/path/to/your/terraform-file.tf` (replace with actual path to terraform file) and confirm by entering `yes`.
+6. Log in to AWS and get the public IP from your web app EC2 instance and go to the pages of the IP, '/posts' and '/fibonacci/10' of the app in your web browser.
+7. If you wish to delete/remove all you added to AWS run `terraform destroy`  or `terraform destroy -var-file=/path/to/your/terraform-file.tf` (replace with actual path to terraform file) and confirm by entering `yes`.

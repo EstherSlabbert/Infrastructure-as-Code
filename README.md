@@ -24,7 +24,7 @@ Infrastructure as Code (IaC) is a software engineering approach and practice tha
 
 **Infrastructure code = code that we write for machines to understand.**
 
-![End-to-end IaC](/images/end-to-end-iac.png)
+![End-to-end IaC](/images/iac-overall.png)
 
 With Infrastructure as Code, the entire infrastructure stack, including servers, networks, storage, and other resources, is described and managed through code<!-- , typically in a declarative or imperative programming language -->. The code defines the desired state of the infrastructure, specifying how it should be provisioned, configured, and deployed. 
 

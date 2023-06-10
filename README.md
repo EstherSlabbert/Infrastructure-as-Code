@@ -28,7 +28,7 @@ Infrastructure as Code (IaC) is a software engineering approach and practice tha
 
 With Infrastructure as Code, the entire infrastructure stack, including servers, networks, storage, and other resources, is described and managed through code<!-- , typically in a declarative or imperative programming language -->. The code defines the desired state of the infrastructure, specifying how it should be provisioned, configured, and deployed. 
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#infrastructure-as-code-iac">back to top</a>)</p>
 
 ### <a id="benefits">Benefits:</a>
 
@@ -52,7 +52,7 @@ Tools used for implementing Infrastructure as Code include:
 - **Orchestration tools** like Terraform and CloudFormation
 - Cloud-specific tools like Azure Resource Manager and Google Cloud Deployment Manager
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#infrastructure-as-code-iac">back to top</a>)</p>
 
 ## <a id="iac-with-ansible">IaC with Ansible</a>
 
@@ -98,7 +98,7 @@ _Requires Vagrant/alternative VM provider installed/available and knowledge on h
 
 - Integration with cloud platforms: Ansible integrates well with various cloud platforms, such as AWS, Azure, Google Cloud, and OpenStack, allowing you to provision and manage cloud resources using Ansible playbooks. It provides modules and plugins specifically designed for interacting with cloud APIs, enabling infrastructure provisioning and configuration management in cloud environments. --->
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#infrastructure-as-code-iac">back to top</a>)</p>
 
 ## <a id="configuration-management-with-ansible">Configuration Management with Ansible</a>
 
@@ -253,7 +253,7 @@ sudo ansible all -m ping --ask-vault-pass
 password:
 -->
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#infrastructure-as-code-iac">back to top</a>)</p>
 
 ### <a id="adhoc-commands-with-ansible">Adhoc Commands with Ansible</a>
 
@@ -290,7 +290,7 @@ Useful module_arguments:
 
 [Ansible - Adhoc commands](https://docs.ansible.com/ansible/latest/command_guide/intro_adhoc.html)
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#infrastructure-as-code-iac">back to top</a>)</p>
 
 ### <a id="ansible-playbooks---yaml">Ansible Playbooks - YAML</a>
 
@@ -313,7 +313,7 @@ Playbooks:
 - Set up `web` VM: [web_setup_playbook.yml](https://github.com/EstherSlabbert/Infrastructure-as-Code/blob/main/web_setup_playbook.yml) or fragmented [Nginx setup](#ansible-nginx-playbooks), [Copy app](#ansible-copy-app-playbook), [NodeJS setup](#ansible-nodejs-playbook), [Environment variable for connection to DB and start app](#ansible-start-app-playbook).
 - Set up `db` VM: [db_setup_playbook.yml](https://github.com/EstherSlabbert/Infrastructure-as-Code/blob/main/db_setup_playbook.yml) or [MongoDB setup](#ansible-set-up-mongodb-playbook).
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#infrastructure-as-code-iac">back to top</a>)</p>
 
 #### <a id="ansible-nginx-playbooks">Ansible Nginx Playbooks</a>
 
@@ -376,7 +376,7 @@ Nginx Reverse Proxy playbook:
       state: reloaded
 ```
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#infrastructure-as-code-iac">back to top</a>)</p>
 
 #### <a id="ansible-copy-app-playbook">Ansible Copy 'app' Playbook</a>
 
@@ -416,7 +416,7 @@ sudo ansible-playbook copy_app_over.yml
 sudo ansible web -a "ls -a"
 ```
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#infrastructure-as-code-iac">back to top</a>)</p>
 
 #### <a id="ansible-nodejs-playbook">Ansible NodeJS Playbook</a>
 
@@ -483,7 +483,7 @@ sudo ansible web -a "node --version"
 sudo ansible web -a "pm2 --version"
 ```
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#infrastructure-as-code-iac">back to top</a>)</p>
 
 #### <a id="ansible-set-up-mongodb-playbook">Ansible Set Up MongoDB Playbook</a>
 
@@ -532,7 +532,7 @@ Playbook to connect app to DB to see /posts page.
 ```
 3. Check: `sudo ansible db -a "sudo systemctl status mongodb"` and `sudo ansible db -a "cat /etc/mongodb.conf"`.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#infrastructure-as-code-iac">back to top</a>)</p>
 
 #### <a id="ansible-start-app-playbook">Ansible Start App Playbook</a>
 
@@ -597,7 +597,7 @@ sudo ansible web -a "pm2 status"
 ```
 Go to the [web VM's IP](http://192.168.33.10/) in your web browser to see if app is running, then try the [/posts page](http://192.168.33.10/posts) and [/fibonnacci/10 page](http://192.168.33.10/fibonacci/10).
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#infrastructure-as-code-iac">back to top</a>)</p>
 
 ## <a id="iac-with-terraform">IaC with Terraform</a>
 
@@ -616,7 +616,7 @@ With Terraform, you can describe your desired infrastructure configuration using
 
 [Terraform documentation](https://developer.hashicorp.com/terraform/docs)
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#infrastructure-as-code-iac">back to top</a>)</p>
 
 ### <a id="install-terraform-on-windows">Install Terraform on Windows</a>
 
@@ -647,7 +647,7 @@ With Terraform, you can describe your desired infrastructure configuration using
 
 If you have a different operating system see the following: [Spacelift guide to install Terraform](https://spacelift.io/blog/how-to-install-terraform).
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#infrastructure-as-code-iac">back to top</a>)</p>
 
 ### <a id="Setup-terraform-to-interact-with-aws-and-launch-an-ec2">Setup Terraform to interact with AWS and launch an EC2</a>
 
@@ -694,6 +694,8 @@ resource "aws_instance" "app_instance"{
 5. `terraform plan` - checks code to see what is executable/ if any errors.
 6. `terraform apply` - will ask for confirmation `yes` then will launch service (i.e. EC2 instance) outlined in `main.tf`.
 7. `terraform destroy` - will ask for confirmation `yes` then terminates service (i.e. EC2 instance) outlined in `main.tf`.
+
+<p align="right">(<a href="#infrastructure-as-code-iac">back to top</a>)</p>
 
 ### <a id="terraform-create-two-tier-vpc-and-ec2-instances">Terraform create two-tier VPC and EC2 instances</a>
 
@@ -989,4 +991,4 @@ output "db_instance_private_ip" {
 6. Log in to AWS and get the public IP from your web app EC2 instance and go to the page of the IP, '/posts' and '/fibonacci/10' of the app in your web browser.
 7. If you wish to delete/remove all you added to AWS run `terraform destroy`  or `terraform destroy -var-file=/path/to/your/terraform-file.tf` (replace with actual path to terraform file) and confirm by entering `yes`.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#infrastructure-as-code-iac">back to top</a>)</p>

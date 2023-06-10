@@ -531,51 +531,38 @@ sudo nano start_app.yml
   gather_facts: yes
 # gives admin privileges to this file
   become: true
+# Start app.js in the app folder:
+# install app dependencies in the app folder
+# seed database using DB_HOST environment variable
+# use pm2 to start app.js in the app folder
+# restart app for incase it was already running
   tasks:
-  - name: Add DB_HOST environment variable to .bashrc
-    lineinfile:
-      # sets destination to .bashrc file
-      path: /home/vagrant/.bashrc
-      # specifies line to be added
-      line: 'export DB_HOST=mongodb://192.168.33.11:27017/posts'
-      # ensures line is added at the end of the file
-      insertafter: EOF
-      state: present
-    notify: Reload bashrc
+  - name: Install npm dependencies
+    command: npm install
+    args:
+        chdir: "/home/vagrant/app"
 
-  - name: Reload bashrc
-    shell: source /home/vagrant/.bashrc
+  - name: Seed the database
+    command: node seeds/seed.js
     args:
-      executable: /bin/bash
-# It is set to run asynchronously with async: 0 and poll: 0 to ensure it runs immediately and does not affect subsequent tasks.
-    async: 0
-    poll: 0
-# The changed_when: false directive is added to avoid unnecessary changes reported by Ansible.
-    changed_when: false
-    
-  - name: Stop running app
-    shell: npm stop app
-    args:
-      chdir: /home/vagrant/app
+      chdir: "/home/vagrant/app"
+    environment:
+      DB_HOST: "mongodb://192.168.33.11:27017/posts"
 
-  - name: Install app dependencies
-    shell: npm install
+  - name: Start the application using PM2
+    command: pm2 start app.js --update-env
     args:
-      chdir: /home/vagrant/app
-    changed_when: false
+      chdir: "/home/vagrant/app"
+    environment:
+      DB_HOST: "mongodb://192.168.33.11:27017/posts"
+    ignore_errors: yes
 
-  - name: Seed database
-    shell: node seeds/seed.js
+  - name: Restart the application using PM2
+    command: pm2 restart app.js --update-env
     args:
-      # changes to correct directory
-      chdir: /home/vagrant/app
-      # ignores warnings
-      warn: false
-
-  - name: Run npm start in the background
-    shell: "cd /home/vagrant/app && nohup npm start > /dev/null 2>&1 &"
-    args:
-      executable: /bin/bash
+      chdir: "/home/vagrant/app"
+    environment:
+      DB_HOST: "mongodb://192.168.33.11:27017/posts"
 
 ```
 3. Run playbook:
@@ -953,6 +940,20 @@ resource "aws_instance" "web-app-server" {
 	tags = {
 		Name = "<name-of-web-app-server>" # replace with desired name
 	}
+}
+
+# Outputs
+# Show EC2 App Instance Public IPv4 Address
+
+output "app_instance_public_ip" {
+  value = aws_instance.app_instance.public_ip
+}
+
+
+# Show EC2 DB Instance Private IPV4 Address
+
+output "db_instance_private_ip" {
+  value = aws_instance.db_instance.private_ip
 }
 ```
 3. Initialize your terraform file with `terraform init` or `terraform init -var-file=/path/to/your/terraform-file.tf` (replace with actual path to terraform file).

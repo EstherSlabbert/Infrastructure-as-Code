@@ -8,11 +8,11 @@
 # gives admin privileges to this file
   become: true
 
-
+# set up for app - nginx installed and reverse proxy, install nodejs & pm2
 # install app dependencies in the app folder
 # use pm2 to start app.js in the app folder
   tasks:
-  # Provisional set up for web server
+# Provisional set up for web server with reverse proxy
 
   # installs nginx
   - name: Installing Nginx
@@ -32,15 +32,17 @@
       name: nginx
       state: reloaded
 
-  # Copies app to web VM from controller VM
+# Copies app to web VM from controller VM
 
   # copies app folder
   - name: Copy App folder
     copy:
+      # app location on ansible controller
       src: /home/vagrant/app
+      # app destination location
       dest: /home/vagrant/
 
-  # Provisional set up for running app (installing required nodejs)
+# Provisional set up for running app (installing required nodejs)
 
   # updates system in preparation for installations
   - name: Update system
@@ -66,70 +68,55 @@
     # uses the apt module to install the nodejs package
     apt:
       name: nodejs
-        # state parameter is set to present to ensure Node.js is installed
+      # state parameter is set to present to ensure Node.js is installed
       state: present
-        # update_cache: yes ensures that the package manager cache is updated before installing
+      # update_cache: yes ensures that the package manager cache is updated before installing
       update_cache: yes
 
   # installs pm2
   - name: Install pm2 globally
-      # ensures admin privileges
+    # ensures admin privileges
     become: true
+    # installs pm2 globally
     command: npm install pm2 -g
 
-  # add permanent environment variable 'DB_HOST' so that the  web VM connects to db VM to seed data
+# Start app
 
-  # creates DB_HOST environment variable permanently in bashrc
-  - name: Add DB_HOST environment variable to .bashrc
-    lineinfile:
-      # sets destination to .bashrc file
-      path: /home/vagrant/.bashrc
-      # specifies line to be added
-      line: 'export DB_HOST=mongodb://192.168.33.11:27017/posts'
-      # ensures line is added at the end of the file
-      insertafter: EOF
-      state: present
-    notify: Reload bashrc
-
-  # reloads bashrc to put DB_HOST in effect
-  - name: Reload bashrc
-    shell: source /home/vagrant/.bashrc
+  # install npm app dependencies
+  - name: Install npm dependencies
+    command: npm install
     args:
-      executable: /bin/bash
-    # It is set to run asynchronously with async: 0 and poll: 0 to ensure it runs immediately and does not affect subsequent tasks.
-    async: 0
-    poll: 0
-    # changed_when: false directive avoids unnecessary changes reported by Ansible
-    changed_when: false
+        # app location
+        chdir: "/home/vagrant/app"
 
-  # stops app if running
-  - name: Stop running app
-    shell: npm stop app
+  # seeds posts page with data from database
+  - name: Seed the database
+    command: node seeds/seed.js
     args:
-      chdir: /home/vagrant/app
-      # ignores the warnings and proceeds
-      warn: false
+      # app location
+      chdir: "/home/vagrant/app"
+    # environment variable to connect with db
+    environment:
+      DB_HOST: "mongodb://192.168.33.11:27017/posts"
 
-  # installs app dependenices in app directory
-  - name: Install app dependencies
-    shell: npm install
+  # starts app with pm2
+  - name: Start the application using PM2
+    command: pm2 start app.js --update-env
     args:
-      chdir: /home/vagrant/app
-    changed_when: false
+      # app location
+      chdir: "/home/vagrant/app"
+    # environment variable to connect with db
+    environment:
+      DB_HOST: "mongodb://192.168.33.11:27017/posts"
+    # ignores errors
+    ignore_errors: yes
 
-  # seeds database
-  - name: Seed database
-    shell: node seeds/seed.js
+  # restarts app with pm2 incase the app was already running
+  - name: Restart the application using PM2
+    command: pm2 restart app.js --update-env
     args:
-      # changes to correct directory
-      chdir: /home/vagrant/app
-      # ignores warnings
-      warn: false
-
-  # starts app with updated env variable DB_HOST, connecting to database
-  - name: Run npm start in the background
-    shell: "cd /home/vagrant/app && nohup npm start > /dev/null 2>&1 &"
-    args:
-      executable: /bin/bash
-
-  
+      # app location
+      chdir: "/home/vagrant/app"
+    # environment variable to connect with db
+    environment:
+      DB_HOST: "mongodb://192.168.33.11:27017/posts"

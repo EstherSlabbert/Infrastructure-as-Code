@@ -28,6 +28,8 @@ Infrastructure as Code (IaC) is a software engineering approach and practice tha
 
 With Infrastructure as Code, the entire infrastructure stack, including servers, networks, storage, and other resources, is described and managed through code<!-- , typically in a declarative or imperative programming language -->. The code defines the desired state of the infrastructure, specifying how it should be provisioned, configured, and deployed. 
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ### <a id="benefits">Benefits:</a>
 
 By treating infrastructure as code, organizations can achieve **greater efficiency**, **consistency**, **scalability**, and **automation**, meaning we eliminate manual processes, in managing their computing infrastructure, making it **easier to deploy and manage applications in a reliable and reproducible manner**.
@@ -49,6 +51,8 @@ Tools used for implementing Infrastructure as Code include:
 - **Configuration management tools** like Ansible, Chef, and Puppet
 - **Orchestration tools** like Terraform and CloudFormation
 - Cloud-specific tools like Azure Resource Manager and Google Cloud Deployment Manager
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## <a id="iac-with-ansible">IaC with Ansible</a>
 
@@ -93,6 +97,8 @@ _Requires Vagrant/alternative VM provider installed/available and knowledge on h
 - Orchestration: Ansible can orchestrate complex deployments and workflows by defining dependencies and executing tasks in a specific order. It provides features like handlers (for triggering actions based on specific events), conditionals, and loops, allowing you to create sophisticated automation scenarios.
 
 - Integration with cloud platforms: Ansible integrates well with various cloud platforms, such as AWS, Azure, Google Cloud, and OpenStack, allowing you to provision and manage cloud resources using Ansible playbooks. It provides modules and plugins specifically designed for interacting with cloud APIs, enabling infrastructure provisioning and configuration management in cloud environments. --->
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## <a id="configuration-management-with-ansible">Configuration Management with Ansible</a>
 
@@ -246,6 +252,9 @@ Edit: `/etc/ansible/ansible.cfg` under '[defaults]' uncomment `host_key_checking
 sudo ansible all -m ping --ask-vault-pass
 password:
 -->
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ### <a id="adhoc-commands-with-ansible">Adhoc Commands with Ansible</a>
 
 Adhoc commands typically follow this format: `ansible <target_hosts> -m <module_name> -a "<module_arguments>"`.
@@ -281,6 +290,8 @@ Useful module_arguments:
 
 [Ansible - Adhoc commands](https://docs.ansible.com/ansible/latest/command_guide/intro_adhoc.html)
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ### <a id="ansible-playbooks---yaml">Ansible Playbooks - YAML</a>
 
 **Playbooks** in Ansible are **written in YAML format** and **describe the desired state of the system or infrastructure** (i.e. **configuration files**). Playbooks consist of a **set of tasks**, where each **task defines a specific action to be performed**, such as installing packages, modifying configurations, or restarting services **to be executed on remote systems**. They are **re-usable** (i.e. **idempotent**) - just need to change the hosts and add keys.
@@ -301,6 +312,8 @@ Playbooks:
 
 - Set up `web` VM: [web_setup_playbook.yml](https://github.com/EstherSlabbert/Infrastructure-as-Code/blob/main/web_setup_playbook.yml) or fragmented [Nginx setup](#ansible-nginx-playbooks), [Copy app](#ansible-copy-app-playbook), [NodeJS setup](#ansible-nodejs-playbook), [Environment variable for connection to DB and start app](#ansible-start-app-playbook).
 - Set up `db` VM: [db_setup_playbook.yml](https://github.com/EstherSlabbert/Infrastructure-as-Code/blob/main/db_setup_playbook.yml) or [MongoDB setup](#ansible-set-up-mongodb-playbook).
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 #### <a id="ansible-nginx-playbooks">Ansible Nginx Playbooks</a>
 
@@ -363,6 +376,8 @@ Nginx Reverse Proxy playbook:
       state: reloaded
 ```
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 #### <a id="ansible-copy-app-playbook">Ansible Copy 'app' Playbook</a>
 
 If app is not on the controller VM already (from setting it up to sync in the Vagrantfile) use this command to copy it over: `scp -r app/ vagrant@192.168.33.12:/home/vagrant/`.
@@ -400,6 +415,8 @@ sudo ansible-playbook copy_app_over.yml
 # check status
 sudo ansible web -a "ls -a"
 ```
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 #### <a id="ansible-nodejs-playbook">Ansible NodeJS Playbook</a>
 
@@ -466,6 +483,8 @@ sudo ansible web -a "node --version"
 sudo ansible web -a "pm2 --version"
 ```
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 #### <a id="ansible-set-up-mongodb-playbook">Ansible Set Up MongoDB Playbook</a>
 
 Playbook to connect app to DB to see /posts page.
@@ -511,7 +530,9 @@ Playbook to connect app to DB to see /posts page.
       name: mongodb
       enabled: yes
 ```
-3. Check: `sudo ansible db -a "sudo systemctl status mongodb"` and `sudo ansible db -a "cat /etc/mongodb.conf"`
+3. Check: `sudo ansible db -a "sudo systemctl status mongodb"` and `sudo ansible db -a "cat /etc/mongodb.conf"`.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 #### <a id="ansible-start-app-playbook">Ansible Start App Playbook</a>
 
@@ -576,6 +597,8 @@ sudo ansible web -a "pm2 status"
 ```
 Go to the [web VM's IP](http://192.168.33.10/) in your web browser to see if app is running, then try the [/posts page](http://192.168.33.10/posts) and [/fibonnacci/10 page](http://192.168.33.10/fibonacci/10).
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## <a id="iac-with-terraform">IaC with Terraform</a>
 
 Terraform is an **Orchestration tool**. Terraform is an **open-source** infrastructure as code (IaC) tool developed by HashiCorp. It **enables you to define and provision infrastructure resources across various cloud providers and on-premises environments in a declarative and version-controlled manner**.
@@ -592,6 +615,8 @@ With Terraform, you can describe your desired infrastructure configuration using
 - Need secret and access keys, have admin access on local machine, use git bash, and know how to set permanent environment variable
 
 [Terraform documentation](https://developer.hashicorp.com/terraform/docs)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### <a id="install-terraform-on-windows">Install Terraform on Windows</a>
 
@@ -621,6 +646,8 @@ With Terraform, you can describe your desired infrastructure configuration using
 9. Verify Terraform's installation in the Git Bash terminal using `terraform --version` to see the version installed or in the standard command terminal `terraform`, which should return a list of commands if terraform installed successfully.
 
 If you have a different operating system see the following: [Spacelift guide to install Terraform](https://spacelift.io/blog/how-to-install-terraform).
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### <a id="Setup-terraform-to-interact-with-aws-and-launch-an-ec2">Setup Terraform to interact with AWS and launch an EC2</a>
 
@@ -961,3 +988,5 @@ output "db_instance_private_ip" {
 5. If you are satisfied run your code with `terraform apply`  or `terraform apply -var-file=/path/to/your/terraform-file.tf` (replace with actual path to terraform file) and confirm by entering `yes`.
 6. Log in to AWS and get the public IP from your web app EC2 instance and go to the page of the IP, '/posts' and '/fibonacci/10' of the app in your web browser.
 7. If you wish to delete/remove all you added to AWS run `terraform destroy`  or `terraform destroy -var-file=/path/to/your/terraform-file.tf` (replace with actual path to terraform file) and confirm by entering `yes`.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>

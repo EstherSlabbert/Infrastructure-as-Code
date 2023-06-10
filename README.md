@@ -704,7 +704,7 @@ resource "aws_instance" "app_instance"{
 Steps to automate setting up a VPC for a 2-tier architecture deployment of a database and the Sparta Provisioning Test App to display the Sparta home page, /posts page and /fibonacci/10 page using the web app server's public IP address:
 
 1. Create a file called `main.tf` or another name in a folder. (If not done already: Add environment variables to account named `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY_ID` with their respecitve keys as the variables.)
-2. Write the following template to your terraform file and edit (Remember to change the names of each resource, use appropriate CIDR blocks, and add the AMI IDs and your own IP where needed):
+2. Write the following template to your terraform file and edit (Remember to change the names of each resource, use appropriate CIDR blocks, and add the AMI IDs and your own IP where needed) or use [terraform file 'main.tf'](https://github.com/EstherSlabbert/Infrastructure-as-Code/blob/main/main.tf):
 ```terraform
 # define provider and region
 provider "aws" {
@@ -988,7 +988,7 @@ output "db_instance_private_ip" {
 3. Initialize your terraform file with `terraform init` or `terraform init -var-file=/path/to/your/terraform-file.tf` (replace with actual path to terraform file).
 4. Check your code with `terraform plan`  or `terraform plan -var-file=/path/to/your/terraform-file.tf` (replace with actual path to terraform file).
 5. If you are satisfied run your code with `terraform apply`  or `terraform apply -var-file=/path/to/your/terraform-file.tf` (replace with actual path to terraform file) and confirm by entering `yes`.
-6. Log in to AWS and get the public IP from your web app EC2 instance and go to the page of the IP, '/posts' and '/fibonacci/10' of the app in your web browser.
+6. Use the output commands at the end of the code above to get the needed IP. Or log in to AWS and get the public IP from your web app EC2 instance and go to the page of the IP, '/posts' and '/fibonacci/10' of the app in your web browser.
 7. If you wish to delete/remove all you added to AWS run `terraform destroy`  or `terraform destroy -var-file=/path/to/your/terraform-file.tf` (replace with actual path to terraform file) and confirm by entering `yes`.
 
 <p align="right">(<a href="#infrastructure-as-code-iac">back to top</a>)</p>
